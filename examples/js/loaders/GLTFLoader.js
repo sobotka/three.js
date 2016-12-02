@@ -251,7 +251,11 @@ THREE.GLTFLoader = ( function () {
 			interps[ i ].target.updateMatrix();
 			interps[ i ].target.matrixAutoUpdate = true;
 
-			// TODO(donmccurdy): BEGIN HACKS
+			// BEGIN HACKS
+			// The input keys are frequently non-sequential. Specifically, index 2
+			// appears to be completely out of place. That's probably a sign that
+			// the animation data in the model is invalid, but to keep this
+			// backward-compatible we can swallow the errors here for now.
 			var keys = [];
 			var values = [];
 			var prevKey = null;
@@ -266,14 +270,14 @@ THREE.GLTFLoader = ( function () {
 				}
 				prevKey = currKey;
 			}
-			keys = new Float32Array(keys);
-			values = new Float32Array(values);
-			// TODO(donmccurdy): END HACKS
+			interps[ i ].keys = new Float32Array(keys);
+			interps[ i ].values = new Float32Array(values);
+			// END HACKS
 
 			tracks.push( new THREE.KeyframeTrack(
 				interps[ i ].name,
-				keys, // interps[ i ].keys,
-				values, // interps[ i ].values,
+				interps[ i ].keys,
+				interps[ i ].values,
 				THREE.InterpolateLinear
 			) );
 		}
