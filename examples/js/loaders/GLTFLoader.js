@@ -265,7 +265,7 @@ THREE.GLTFLoader = ( function () {
 	}
 
 	/**
-	 * Interp 'times' are frequently non-sequential in the monster model.
+	 * Interp times are frequently non-sequential in the monster model.
 	 * Specifically, index 2 appears to be completely out of place. That's
 	 * probably a sign that the animation data in the model is invalid, but to
 	 * keep this backward-compatible we can swallow the errors here for now.
@@ -300,6 +300,7 @@ THREE.GLTFLoader = ( function () {
 
 		interp.times = new Float32Array( times );
 		interp.values = new Float32Array( values );
+
 	}
 
 	/*********************************/

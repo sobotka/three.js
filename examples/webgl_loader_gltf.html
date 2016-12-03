@@ -325,8 +325,7 @@
 							// keeps it from looping cleanly. Clip it at 3 seconds
 							if (sceneInfo.animationTime)
 								clip.duration = sceneInfo.animationTime;
-							var action = mixer.clipAction(clip);
-							action.play();
+							mixer.clipAction(clip).play();
 						}
 					}
 
