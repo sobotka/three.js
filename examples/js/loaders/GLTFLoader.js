@@ -257,7 +257,7 @@ THREE.GLTFLoader = ( function () {
 				interps[ i ].name,
 				interps[ i ].times,
 				interps[ i ].values,
-				THREE.InterpolateLinear
+				interps[ i ].type
 			) );
 		}
 
@@ -274,17 +274,18 @@ THREE.GLTFLoader = ( function () {
 
 		var times = [];
 		var values = [];
-		var prevKey = null;
+		var prevTime = null;
+		var currTime = null;
 
 		for ( var i = 0; i < interp.times.length; i ++ ) {
 
-			var currKey = interp.times[ i ];
+			currTime = interp.times[ i ];
 
-			if (prevKey !== null && prevKey <= currKey) {
+			if (prevTime !== null && prevTime <= currTime) {
 
 				var stride = interp.values.length / interp.times.length;
 
-				times.push( currKey );
+				times.push( currTime );
 
 				for ( var j = 0; j < stride; j++ ) {
 
@@ -294,7 +295,7 @@ THREE.GLTFLoader = ( function () {
 
 			}
 
-			prevKey = currKey;
+			prevTime = currTime;
 		}
 
 		interp.times = new Float32Array( times );
@@ -375,6 +376,10 @@ THREE.GLTFLoader = ( function () {
 		scale: 'scale',
 		translation: 'position',
 		rotation: 'quaternion'
+	};
+
+	var INTERPOLATION = {
+		LINEAR: THREE.InterpolateLinear
 	};
 
 	/* UTILITY FUNCTIONS */
@@ -1312,10 +1317,8 @@ THREE.GLTFLoader = ( function () {
 							var interp = {
 								times: inputAccessor.array,
 								values: outputAccessor.array,
-								count: inputAccessor.count,
 								target: node,
-								path: target.path,
-								type: sampler.interpolation,
+								type: INTERPOLATION[sampler.interpolation],
 								name: target.id + '.' + PATH_PROPERTIES[target.path]
 							};
 
