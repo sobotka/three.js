@@ -248,41 +248,57 @@ THREE.GLTFLoader = ( function () {
 
 		for ( var i = 0, len = interps.length; i < len; i ++ ) {
 
+			validateInterpolator( interps[ i ] );
+
 			interps[ i ].target.updateMatrix();
 			interps[ i ].target.matrixAutoUpdate = true;
 
-			// BEGIN HACKS
-			// The input keys are frequently non-sequential. Specifically, index 2
-			// appears to be completely out of place. That's probably a sign that
-			// the animation data in the model is invalid, but to keep this
-			// backward-compatible we can swallow the errors here for now.
-			var keys = [];
-			var values = [];
-			var prevKey = null;
-			for (var j = 0; j < interps[ i ].keys.length; j ++) {
-				var currKey = interps[ i ].keys[ j ];
-				if (prevKey !== null && prevKey <= currKey) {
-					var stride = interps[ i ].values.length / interps[ i ].keys.length;
-					keys.push(currKey);
-					for (var k = 0; k < stride; k++) {
-						values.push(interps[ i ].values[j * stride + k]);
-					}
-				}
-				prevKey = currKey;
-			}
-			interps[ i ].keys = new Float32Array(keys);
-			interps[ i ].values = new Float32Array(values);
-			// END HACKS
-
 			tracks.push( new THREE.KeyframeTrack(
 				interps[ i ].name,
-				interps[ i ].keys,
+				interps[ i ].times,
 				interps[ i ].values,
 				THREE.InterpolateLinear
 			) );
 		}
 
-		return new THREE.AnimationClip(name, undefined, tracks);
+		return new THREE.AnimationClip( name, undefined, tracks );
+	}
+
+	/**
+	 * Interp 'times' are frequently non-sequential in the monster model.
+	 * Specifically, index 2 appears to be completely out of place. That's
+	 * probably a sign that the animation data in the model is invalid, but to
+	 * keep this backward-compatible we can swallow the errors here for now.
+	 */
+	function validateInterpolator( interp ) {
+
+		var times = [];
+		var values = [];
+		var prevKey = null;
+
+		for ( var i = 0; i < interp.times.length; i ++ ) {
+
+			var currKey = interp.times[ i ];
+
+			if (prevKey !== null && prevKey <= currKey) {
+
+				var stride = interp.values.length / interp.times.length;
+
+				times.push( currKey );
+
+				for ( var j = 0; j < stride; j++ ) {
+
+					values.push( interp.values[ i * stride + j ] );
+
+				}
+
+			}
+
+			prevKey = currKey;
+		}
+
+		interp.times = new Float32Array( times );
+		interp.values = new Float32Array( values );
 	}
 
 	/*********************************/
@@ -1294,7 +1310,7 @@ THREE.GLTFLoader = ( function () {
 						if ( node ) {
 
 							var interp = {
-								keys: inputAccessor.array,
+								times: inputAccessor.array,
 								values: outputAccessor.array,
 								count: inputAccessor.count,
 								target: node,
