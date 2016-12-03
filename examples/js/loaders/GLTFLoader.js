@@ -1318,8 +1318,8 @@ THREE.GLTFLoader = ( function () {
 								times: inputAccessor.array,
 								values: outputAccessor.array,
 								target: node,
-								type: INTERPOLATION[sampler.interpolation],
-								name: target.id + '.' + PATH_PROPERTIES[target.path]
+								type: INTERPOLATION[ sampler.interpolation ],
+								name: node.name + '.' + PATH_PROPERTIES[ target.path ]
 							};
 
 							interps.push( interp );
