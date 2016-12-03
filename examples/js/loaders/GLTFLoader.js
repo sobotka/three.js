@@ -355,6 +355,12 @@ THREE.GLTFLoader = ( function () {
 		'MAT4': 16
 	};
 
+	var PATH_PROPERTIES = {
+		scale: 'scale',
+		translation: 'position',
+		rotation: 'quaternion'
+	};
+
 	/* UTILITY FUNCTIONS */
 
 	function _each( object, callback, thisObj ) {
@@ -1251,11 +1257,7 @@ THREE.GLTFLoader = ( function () {
 
 	};
 
-	var pathToProperty = {
-		scale: 'scale',
-		translation: 'position',
-		rotation: 'quaternion'
-	};
+
 
 	GLTFParser.prototype.loadClips = function () {
 
@@ -1298,7 +1300,7 @@ THREE.GLTFLoader = ( function () {
 								target: node,
 								path: target.path,
 								type: sampler.interpolation,
-								name: target.id + '.' + pathToProperty[target.path]
+								name: target.id + '.' + PATH_PROPERTIES[target.path]
 							};
 
 							interps.push( interp );
