@@ -265,10 +265,9 @@ THREE.GLTFLoader = ( function () {
 	}
 
 	/**
-	 * Interp times are frequently non-sequential in the monster model.
-	 * Specifically, index 2 appears to be completely out of place. That's
-	 * probably a sign that the animation data in the model is invalid, but to
-	 * keep this backward-compatible we can swallow the errors here for now.
+	 * Interp times are frequently non-sequential in the monster and cesium man
+	 * models. That's probably a sign that the exporter is misbehaving, but to
+	 * keep this backward-compatible we can swallow the errors.
 	 */
 	function validateInterpolator( interp ) {
 
