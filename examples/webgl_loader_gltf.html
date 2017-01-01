@@ -35,7 +35,7 @@
 				width:250px;
 				bottom:0%;
 				right:0%;
-				height:132px;
+				height:162px;
 				background-color:White;
 				opacity:.9;
 				font: 13px/1.231 "Lucida Grande", Lucida, Verdana, sans-serif;
@@ -84,6 +84,11 @@
 				top:104px;
 			}
 
+			#binary_format_control {
+				position:absolute;
+				top: 136px;
+			}
+
 			#info a, .button { color: #f00; font-weight: bold; text-decoration: underline; cursor: pointer }
 		</style>
 	</head>
@@ -120,6 +125,12 @@
 			Shaders
 			<div class="controlValue">
 			<input type="checkbox" id="materials_extension_checkbox" checked onclick="toggleMaterialsExtension();">Use built-in</input>
+			</div>
+		</div>
+		<div class="control" id="binary_format_control">
+			Format
+			<div class="controlValue">
+			<input type="checkbox" id="binary_format_checkbox" checked onclick="toggleBinaryFormat();">Use binary</input>
 			</div>
 		</div>
 
@@ -242,6 +253,12 @@
 				var r = eval("/" + '\%s' + "/g");
 				var dir = useMaterialsExtension ? 'glTF-MaterialsCommon' :  'glTF';
 				url = url.replace(r, dir);
+
+				// TODO(donmccurdy): This is a shitty way to do this.
+				if (useBinaryFormat) {
+					url = url.replace(dir, 'glTF-Binary');
+					url = url.replace('.gltf', '.glb');
+				}
 
 				var loadStartTime = Date.now();
 				var status = document.getElementById("status");
@@ -563,6 +580,14 @@
 			function toggleMaterialsExtension()
 			{
 				useMaterialsExtension = !useMaterialsExtension;
+				selectScene();
+			}
+
+			var useformatBinary = document.getElementById("binary_format_checkbox");
+			var useBinaryFormat = useformatBinary.hasAttribute("checked");
+			function toggleBinaryFormat()
+			{
+				useBinaryFormat = !useBinaryFormat;
 				selectScene();
 			}
 
