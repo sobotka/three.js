@@ -24,8 +24,7 @@ THREE.GLTFLoader = ( function () {
 
 			var loader = new THREE.FileLoader( scope.manager );
 
-			// TODO(donmccurdy): What could go wrong.
-			if (url.indexOf('.glb') >= 0) {
+			if ( url.search( '.glb' ) >= 0 ) {
 
 				loader.responseType = 'arraybuffer';
 
@@ -39,20 +38,14 @@ THREE.GLTFLoader = ( function () {
 
 				} else if ( data instanceof ArrayBuffer ) {
 
-					var dv = new DataView( data );
+					var view = new DataView( data );
 					var headerLength = 20;
-					var magic = [0, 1, 2, 3]
-						.map(dv.getUint8.bind(dv))
-						.map(String.fromCharCode)
-						.join('');
-					var version = dv.getUint32( 4, true );
-					var length = dv.getUint32( 8, true );
-					var contentLength = dv.getUint32( 12, true );
-					var contentFormat = dv.getUint32( 16, true );
-					var content = '';
-					for (var i = 0; i < contentLength; i++) {
-						content += String.fromCharCode( dv.getUint8( headerLength + i ) );
-					}
+					var magic = String.fromCharCode.apply( null, new Uint8Array( data.slice( 0, 4 ) ) );
+					var version = view.getUint32( 4, true );
+					var length = view.getUint32( 8, true );
+					var contentLength = view.getUint32( 12, true );
+					var contentFormat = view.getUint32( 16, true );
+					var content = String.fromCharCode.apply( null, new Uint8Array( data, headerLength, contentLength ) );
 					var bodyOffset = headerLength + contentLength;
 					var body = data.slice( bodyOffset, length );
 
@@ -60,7 +53,7 @@ THREE.GLTFLoader = ( function () {
 
 				} else {
 
-					throw new Error( 'Unknown response type');
+					throw new Error( 'Unknown response type' );
 
 				}
 
@@ -702,6 +695,46 @@ THREE.GLTFLoader = ( function () {
 
 	};
 
+	GLTFParser.prototype.loadShaders = function () {
+
+		var json = this.json;
+		var options = this.options;
+
+		return this._withDependencies( [
+
+			"bufferViews"
+
+		] ).then( function ( dependencies ) {
+
+			return _each( json.shaders, function ( shader ) {
+
+				// TODO(donmccurdy): Encapsulate binary extension code somehow.
+				if ( shader.extensions && shader.extensions.KHR_binary_glTF ) {
+
+					var bufferView = dependencies.bufferViews[ shader.extensions.KHR_binary_glTF.bufferView ];
+					var array = new Uint8Array( bufferView );
+					return String.fromCharCode.apply( null, array );
+
+				}
+
+				return new Promise( function ( resolve ) {
+
+					var loader = new THREE.FileLoader();
+					loader.responseType = 'text';
+					loader.load( resolveURL( shader.uri, options.path ), function ( shaderText ) {
+
+						resolve( shaderText );
+
+					} );
+
+				} );
+
+			} );
+
+		} );
+
+	};
+
 	GLTFParser.prototype.loadBuffers = function () {
 
 		var json = this.json;
@@ -792,50 +825,9 @@ THREE.GLTFLoader = ( function () {
 
 					array = new TypedArray( arraybuffer, accessor.byteOffset, accessor.count * itemSize );
 
-					// TODO(donmccurdy): In binary format, this accessor doubles in size for no reason.
 					return new THREE.BufferAttribute( array, itemSize );
 
 				}
-
-			} );
-
-		} );
-
-	};
-
-	GLTFParser.prototype.loadShaders = function () {
-
-		var json = this.json;
-		var options = this.options;
-
-		return this._withDependencies( [
-
-			"bufferViews"
-
-		] ).then( function ( dependencies ) {
-
-			return _each( json.shaders, function ( shader ) {
-
-				// TODO(donmccurdy): Encapsulate binary extension code somehow.
-				if ( shader.extensions && shader.extensions.KHR_binary_glTF ) {
-
-					var bufferView = dependencies.bufferViews[ shader.extensions.KHR_binary_glTF.bufferView ];
-					var array = new Uint8Array( bufferView );
-					return String.fromCharCode.apply( null, array );
-
-				}
-
-				return new Promise( function ( resolve ) {
-
-					var loader = new THREE.FileLoader();
-					loader.responseType = 'text';
-					loader.load( resolveURL( shader.uri, options.path ), function ( shaderText ) {
-
-						resolve( shaderText );
-
-					} );
-
-				} );
 
 			} );
 
@@ -886,7 +878,19 @@ THREE.GLTFLoader = ( function () {
 
 						textureLoader.load( resolveURL( sourceUri, options.path ), function ( _texture ) {
 
-							updateTextureFromSampler( _texture, texture.sampler );
+							_texture.flipY = false;
+
+							if ( texture.sampler ) {
+
+								var sampler = json.samplers[ texture.sampler ];
+
+								_texture.magFilter = WEBGL_FILTERS[ sampler.magFilter ];
+								_texture.minFilter = WEBGL_FILTERS[ sampler.minFilter ];
+								_texture.wrapS = WEBGL_WRAPPINGS[ sampler.wrapS ];
+								_texture.wrapT = WEBGL_WRAPPINGS[ sampler.wrapT ];
+
+							}
+
 							resolve( _texture );
 
 						}, undefined, function () {
@@ -895,7 +899,6 @@ THREE.GLTFLoader = ( function () {
 
 						} );
 
-
 					} );
 
 				}
@@ -903,23 +906,6 @@ THREE.GLTFLoader = ( function () {
 			} );
 
 		} );
-
-		function updateTextureFromSampler ( texture, samplerName ) {
-
-			texture.flipY = false;
-
-			if ( samplerName ) {
-
-				var sampler = json.samplers[ samplerName ];
-
-				texture.magFilter = WEBGL_FILTERS[ sampler.magFilter ];
-				texture.minFilter = WEBGL_FILTERS[ sampler.minFilter ];
-				texture.wrapS = WEBGL_WRAPPINGS[ sampler.wrapS ];
-				texture.wrapT = WEBGL_WRAPPINGS[ sampler.wrapT ];
-
-			}
-
-		}
 
 	};
 

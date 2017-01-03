@@ -35,7 +35,7 @@
 				width:250px;
 				bottom:0%;
 				right:0%;
-				height:162px;
+				height:132px;
 				background-color:White;
 				opacity:.9;
 				font: 13px/1.231 "Lucida Grande", Lucida, Verdana, sans-serif;
@@ -79,14 +79,9 @@
 				top:72px;
 			}
 
-			#materials_extension_control {
+			#extensions_control {
 				position:absolute;
 				top:104px;
-			}
-
-			#binary_format_control {
-				position:absolute;
-				top: 136px;
 			}
 
 			#info a, .button { color: #f00; font-weight: bold; text-decoration: underline; cursor: pointer }
@@ -121,16 +116,14 @@
 		Animations
 		<div class="controlValue"><input type="checkbox" checked onclick="toggleAnimations();">Play</input></div>
 		</div>
-		<div class="control" id="materials_extension_control">
-			Shaders
+		<div class="control" id="extensions_control">
+			Extension
 			<div class="controlValue">
-			<input type="checkbox" id="materials_extension_checkbox" checked onclick="toggleMaterialsExtension();">Use built-in</input>
-			</div>
-		</div>
-		<div class="control" id="binary_format_control">
-			Format
-			<div class="controlValue">
-			<input type="checkbox" id="binary_format_checkbox" checked onclick="toggleBinaryFormat();">Use binary</input>
+				<select id="extensions_list" onchange="selectExtension();">
+					<option value="glTF">None</option>
+					<option value="glTF-MaterialsCommon">Built-in shaders</option>
+					<option value="glTF-Binary">Binary</option>
+				</select>
 			</div>
 		</div>
 
@@ -251,12 +244,9 @@
 				status.innerHTML = "Loading...";
 				var url = sceneInfo.url;
 				var r = eval("/" + '\%s' + "/g");
-				var dir = useMaterialsExtension ? 'glTF-MaterialsCommon' :  'glTF';
-				url = url.replace(r, dir);
+				url = url.replace(r, extension);
 
-				// TODO(donmccurdy): This is a shitty way to do this.
-				if (useBinaryFormat) {
-					url = url.replace(dir, 'glTF-Binary');
+				if (extension === 'glTF-Binary') {
 					url = url.replace('.gltf', '.glb');
 				}
 
@@ -575,22 +565,13 @@
 
 			}
 
-			var useextmaterials = document.getElementById("materials_extension_checkbox");
-			var useMaterialsExtension = useextmaterials.hasAttribute("checked");
-			function toggleMaterialsExtension()
+			var extensionSelect = document.getElementById("extensions_list");
+			var extension = extensionSelect.value;
+			function selectExtension()
 			{
-				useMaterialsExtension = !useMaterialsExtension;
+				extension = extensionSelect.value;
 				selectScene();
 			}
-
-			var useformatBinary = document.getElementById("binary_format_checkbox");
-			var useBinaryFormat = useformatBinary.hasAttribute("checked");
-			function toggleBinaryFormat()
-			{
-				useBinaryFormat = !useBinaryFormat;
-				selectScene();
-			}
-
 
 			function cleanup() {
 
