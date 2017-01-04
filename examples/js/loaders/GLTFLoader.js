@@ -423,9 +423,8 @@ THREE.GLTFLoader = ( function () {
 		var metadata = source.extensions[ EXTENSIONS.KHR_BINARY_GLTF ];
 		var bufferView = bufferViews[ metadata.bufferView ];
 		var stringData = convertUint8ArrayToString( new Uint8Array( bufferView ) );
-		var sourceUri = 'data:' + metadata.mimeType + ';base64,' + btoa( stringData );
 
-		return Object.assign( {}, source, { uri: sourceUri } );
+		return 'data:' + metadata.mimeType + ';base64,' + btoa( stringData );
 
 	};
 
@@ -982,16 +981,15 @@ THREE.GLTFLoader = ( function () {
 					return new Promise( function ( resolve ) {
 
 						var source = json.images[ texture.source ];
+						var sourceUri = source.uri;
 
 						if (source.extensions && source.extensions[ EXTENSIONS.KHR_BINARY_GLTF ]) {
 
-							var bufferViews = dependencies.bufferViews;
-
-							source = extensions[ EXTENSIONS.KHR_BINARY_GLTF ].loadTextureSourceUri( source, bufferViews );
+							sourceUri = extensions[ EXTENSIONS.KHR_BINARY_GLTF ].loadTextureSourceUri( source, dependencies.bufferViews );
 
 						}
 
-						var textureLoader = THREE.Loader.Handlers.get( source.uri );
+						var textureLoader = THREE.Loader.Handlers.get( sourceUri );
 
 						if ( textureLoader === null ) {
 
@@ -1001,7 +999,7 @@ THREE.GLTFLoader = ( function () {
 
 						textureLoader.setCrossOrigin( options.crossOrigin );
 
-						textureLoader.load( resolveURL( source.uri, options.path ), function ( _texture ) {
+						textureLoader.load( resolveURL( sourceUri, options.path ), function ( _texture ) {
 
 							_texture.flipY = false;
 
