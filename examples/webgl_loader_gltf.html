@@ -242,6 +242,15 @@
 				var loadStartTime = Date.now();
 				var status = document.getElementById("status");
 				status.innerHTML = "Loading...";
+
+				for (var i = 0; i < extensionSelect.children.length; i++) {
+					var child = extensionSelect.children[i];
+					child.disabled = sceneInfo.extensions.indexOf(child.value) === -1;
+					if (child.disabled && child.selected) {
+						extensionSelect.value = extension = 'glTF';
+					}
+				}
+
 				var url = sceneInfo.url;
 				var r = eval("/" + '\%s' + "/g");
 				url = url.replace(r, extension);
@@ -412,14 +421,16 @@
 					animationTime: 3,
 					addLights:true,
 					shadows:true,
-					addGround:true
+					addGround:true,
+					extensions: ["glTF", "glTF-MaterialsCommon", "glTF-Binary"]
 				},
 				{
 					name : "Duck", url : "./models/gltf/duck/%s/duck.gltf",
 					cameraPos: new THREE.Vector3(0, 3, 5),
 					addLights:true,
 					addGround:true,
-					shadows:true
+					shadows:true,
+					extensions: ["glTF", "glTF-MaterialsCommon", "glTF-Binary"]
 				},
 				{
 					name : "Cesium Man", url : "./models/gltf/CesiumMan/%s/Cesium_Man.gltf",
@@ -427,7 +438,8 @@
 					 objectRotation: new THREE.Euler(0, 0, 0),
 					 addLights:true,
 					 addGround:true,
-					 shadows:true
+					 shadows:true,
+					 extensions: ["glTF", "glTF-MaterialsCommon", "glTF-Binary"]
 				},
 				{
 					name : "Cesium Milk Truck",
@@ -435,7 +447,8 @@
 					cameraPos: new THREE.Vector3(0, 3, 10),
 					addLights:true,
 					addGround:true,
-					shadows:true
+					shadows:true,
+					extensions: ["glTF", "glTF-MaterialsCommon", "glTF-Binary"]
 				},
 				{
 					name : "Snowflake",
@@ -445,7 +458,8 @@
 					objectPosition: new THREE.Vector3(0, 0, 0),
 					addLights:false,
 					addGround:false,
-					shadows:false
+					shadows:false,
+					extensions: ["glTF"]
 				},
 				{
 					name : "Snowflakes",
@@ -454,7 +468,8 @@
 					objectPosition: new THREE.Vector3(-1200, -1200, 0),
 					addLights:false,
 					addGround:false,
-					shadows:false
+					shadows:false,
+					extensions: ["glTF"]
 				}
 			];
 
