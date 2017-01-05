@@ -24,32 +24,11 @@ THREE.GLTFLoader = ( function () {
 
 			var loader = new THREE.FileLoader( scope.manager );
 
-			var extensions = {};
-
-			if ( url.search( '.glb' ) >= 0 ) {
-
-				loader.responseType = 'arraybuffer';
-
-			}
+			loader.responseType = 'arraybuffer';
 
 			loader.load( url, function ( data ) {
 
-				if ( data instanceof ArrayBuffer ) {
-
-					extensions[ EXTENSIONS.KHR_BINARY_GLTF ] = new GLTFBinaryExtension( data );
-					data = extensions[ EXTENSIONS.KHR_BINARY_GLTF ].content;
-
-				}
-
-				var json = JSON.parse( data );
-
-				if ( json.extensionsUsed && json.extensionsUsed.indexOf( EXTENSIONS.KHR_MATERIALS_COMMON ) >= 0 ) {
-
-					extensions[ EXTENSIONS.KHR_MATERIALS_COMMON ] = new GLTFMaterialsCommonExtension( json );
-
-				}
-
-				scope.parse( json , extensions, onLoad, path );
+				scope.parse( data , onLoad, path );
 
 			}, onProgress, onError );
 
@@ -67,7 +46,33 @@ THREE.GLTFLoader = ( function () {
 
 		},
 
-		parse: function ( json, extensions, callback, path ) {
+		parse: function ( data, callback, path ) {
+
+			var json;
+
+			var extensions = {};
+
+			var magic = convertUint8ArrayToString( new Uint8Array( data, 0, 4 ) );
+
+			if ( magic === BINARY_EXTENSION_HEADER_DEFAULTS.magic ) {
+
+				extensions[ EXTENSIONS.KHR_BINARY_GLTF ] = new GLTFBinaryExtension( data );
+
+				json = extensions[ EXTENSIONS.KHR_BINARY_GLTF ].content;
+
+			} else {
+
+				json = convertUint8ArrayToString( new Uint8Array( data ) );
+
+			}
+
+			json = JSON.parse( json );
+
+			if ( json.extensionsUsed && json.extensionsUsed.indexOf( EXTENSIONS.KHR_MATERIALS_COMMON ) >= 0 ) {
+
+				extensions[ EXTENSIONS.KHR_MATERIALS_COMMON ] = new GLTFMaterialsCommonExtension( json );
+
+			}
 
 			console.time( 'GLTFLoader' );
 
