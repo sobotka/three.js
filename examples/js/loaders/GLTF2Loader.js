@@ -2058,10 +2058,18 @@ THREE.GLTF2Loader = ( function () {
 											var bone = __nodes[ nodeId ];
 											var boneJson = json.nodes[ nodeId ];
 
-											if ( bone !== undefined && bone.isBone === true && boneJson !== undefined ) {
+											if ( bone !== undefined && boneJson !== undefined ) {
 
-												parentObject.add( bone );
-												buildBoneGraph( boneJson, bone, 'children' );
+												if ( bone.isBone === true ) {
+
+													parentObject.add( bone );
+													buildBoneGraph( boneJson, bone, 'children' );
+
+												} else {
+
+													buildBoneGraph( boneJson, parentObject, 'children' );
+
+												}
 
 											}
 

@@ -87,9 +87,9 @@
 		<div>
 			Extension
 			<select id="extensions_list" onchange="selectExtension();">
-				<option value="glTF">None</option>
-				<option value="glTF-MaterialsCommon">Built-in shaders</option>
-				<option value="glTF-Binary">Binary</option>
+				<option value="glTF">glTF</option>
+				<option value="glTF-MaterialsCommon">glTF-MaterialsCommon</option>
+				<option value="glTF-Binary">glTF-Binary</option>
 			</select>
 		</div>
 	</div>
@@ -390,13 +390,13 @@
 					extensions: ["glTF", "glTF-MaterialsCommon", "glTF-Binary"]
 				},
 				{
-					name : "Cesium Man", url : "./models/gltf/CesiumMan/%s/Cesium_Man.gltf",
-					 cameraPos: new THREE.Vector3(0, 3, 10),
-					 objectRotation: new THREE.Euler(0, 0, 0),
-					 addLights:true,
-					 addGround:true,
-					 shadows:true,
-					 extensions: ["glTF", "glTF-MaterialsCommon", "glTF-Binary"]
+					name : "Cesium Man", url : "./models/gltf/CesiumMan/%s/CesiumMan.gltf",
+					cameraPos: new THREE.Vector3(0, 3, 10),
+					objectRotation: new THREE.Euler(0, 0, 0),
+					addLights:true,
+					addGround:true,
+					shadows:true,
+					extensions: ["glTF", "glTF-MaterialsCommon", "glTF-Binary"]
 				},
 				{
 					name : "Cesium Milk Truck",
