@@ -68,6 +68,12 @@ THREE.GLTF2Loader = ( function () {
 
 			var json = JSON.parse( content );
 
+			if ( json.extensionsUsed && json.extensionsUsed.indexOf( EXTENSIONS.KHR_LIGHTS ) >= 0 ) {
+
+				extensions[ EXTENSIONS.KHR_LIGHTS ] = new GLTFLightsExtension( json );
+
+			}
+
 			if ( json.extensionsUsed && json.extensionsUsed.indexOf( EXTENSIONS.KHR_MATERIALS_COMMON ) >= 0 ) {
 
 				extensions[ EXTENSIONS.KHR_MATERIALS_COMMON ] = new GLTFMaterialsCommonExtension( json );
@@ -263,18 +269,19 @@ THREE.GLTF2Loader = ( function () {
 
 	var EXTENSIONS = {
 		KHR_BINARY_GLTF: 'KHR_binary_glTF',
+		KHR_LIGHTS: 'KHR_lights',
 		KHR_MATERIALS_COMMON: 'KHR_materials_common'
 	};
 
-	/* MATERIALS COMMON EXTENSION */
+	/* LIGHTS EXTENSION */
 
-	function GLTFMaterialsCommonExtension( json ) {
+	function GLTFLightsExtension( json ) {
 
-		this.name = EXTENSIONS.KHR_MATERIALS_COMMON;
+		this.name = EXTENSIONS.KHR_LIGHTS;
 
 		this.lights = {};
 
-		var extension = ( json.extensions && json.extensions[ EXTENSIONS.KHR_MATERIALS_COMMON ] ) || {};
+		var extension = ( json.extensions && json.extensions[ this.name ] ) || {};
 		var lights = extension.lights || {};
 
 		for ( var lightId in lights ) {
@@ -316,6 +323,72 @@ THREE.GLTF2Loader = ( function () {
 		}
 
 	}
+
+	/* MATERIALS COMMON EXTENSION */
+
+	function GLTFMaterialsCommonExtension( json ) {
+
+		this.name = EXTENSIONS.KHR_MATERIALS_COMMON;
+
+	}
+
+	GLTFMaterialsCommonExtension.prototype.getMaterial = function( material ) {
+
+		var khrMaterial = material.extensions[  this.name ];
+
+		var materialType;
+		var materialValues = {};
+		var materialParams = {};
+
+		// don't copy over unused values to avoid material warning spam
+		var keys = [ 'ambient', 'emission', 'transparent', 'transparency', 'doubleSided' ];
+
+		switch ( khrMaterial.technique ) {
+
+		 case 'BLINN' :
+		 case 'PHONG' :
+			 materialType = THREE.MeshPhongMaterial;
+			 keys.push( 'diffuse', 'specular', 'shininess' );
+			 break;
+
+		 case 'LAMBERT' :
+			 materialType = THREE.MeshLambertMaterial;
+			 keys.push( 'diffuse' );
+			 break;
+
+		 case 'CONSTANT' :
+		 default :
+			 materialType = THREE.MeshBasicMaterial;
+			 break;
+
+		}
+
+		keys.forEach( function( v ) {
+
+		 if ( khrMaterial.values[ v ] !== undefined ) materialValues[ v ] = khrMaterial.values[ v ];
+
+		} );
+
+		if ( khrMaterial.doubleSided || materialValues.doubleSided ) {
+
+		 materialParams.side = THREE.DoubleSide;
+
+		}
+
+		if ( khrMaterial.transparent || materialValues.transparent ) {
+
+		 materialParams.transparent = true;
+		 materialParams.opacity = ( materialValues.transparency !== undefined ) ? materialValues.transparency : 1;
+
+		}
+
+		return {
+			materialType: materialType,
+			materialValues: materialValues,
+			materialParams: materialParams
+		};
+
+	};
 
 	/* BINARY EXTENSION */
 
@@ -1112,7 +1185,7 @@ THREE.GLTF2Loader = ( function () {
 							if ( texture.internalFormat !== undefined && _texture.format !== WEBGL_TEXTURE_FORMATS[ texture.internalFormat ] ) {
 
 								console.warn( 'THREE.GLTF2Loader: Three.js doesn\'t support texture internalFormat which is different from texture format. ' +
-								              'internalFormat will be forced to be the same value as format.' );
+															'internalFormat will be forced to be the same value as format.' );
 
 							}
 
@@ -1150,6 +1223,7 @@ THREE.GLTF2Loader = ( function () {
 	GLTFParser.prototype.loadMaterials = function () {
 
 		var json = this.json;
+		var extensions = this.extensions;
 
 		return this._withDependencies( [
 
@@ -1164,57 +1238,12 @@ THREE.GLTF2Loader = ( function () {
 				var materialValues = {};
 				var materialParams = {};
 
-				var khr_material;
-
 				if ( material.extensions && material.extensions[ EXTENSIONS.KHR_MATERIALS_COMMON ] ) {
 
-					khr_material = material.extensions[ EXTENSIONS.KHR_MATERIALS_COMMON ];
-
-				}
-
-				if ( khr_material ) {
-
-					// don't copy over unused values to avoid material warning spam
-					var keys = [ 'ambient', 'emission', 'transparent', 'transparency', 'doubleSided' ];
-
-					switch ( khr_material.technique ) {
-
-						case 'BLINN' :
-						case 'PHONG' :
-							materialType = THREE.MeshPhongMaterial;
-							keys.push( 'diffuse', 'specular', 'shininess' );
-							break;
-
-						case 'LAMBERT' :
-							materialType = THREE.MeshLambertMaterial;
-							keys.push( 'diffuse' );
-							break;
-
-						case 'CONSTANT' :
-						default :
-							materialType = THREE.MeshBasicMaterial;
-							break;
-
-					}
-
-					keys.forEach( function( v ) {
-
-						if ( khr_material.values[ v ] !== undefined ) materialValues[ v ] = khr_material.values[ v ];
-
-					} );
-
-					if ( khr_material.doubleSided || materialValues.doubleSided ) {
-
-						materialParams.side = THREE.DoubleSide;
-
-					}
-
-					if ( khr_material.transparent || materialValues.transparent ) {
-
-						materialParams.transparent = true;
-						materialParams.opacity = ( materialValues.transparency !== undefined ) ? materialValues.transparency : 1;
-
-					}
+					var khrMaterial = extensions[ EXTENSIONS.KHR_MATERIALS_COMMON ].getMaterial( material );
+					materialType = khrMaterial.materialType;
+					materialValues = khrMaterial.materialValues;
+					materialParams = khrMaterial.materialParams;
 
 				} else if ( material.technique === undefined ) {
 
@@ -1248,10 +1277,10 @@ THREE.GLTF2Loader = ( function () {
 							}
 
 							if ( materialParams.opacity < 1.0 ||
-							     ( materialParams.map !== undefined &&
-							       ( materialParams.map.format === THREE.AlphaFormat ||
-							         materialParams.map.format === THREE.RGBAFormat ||
-							         materialParams.map.format === THREE.LuminanceAlphaFormat ) ) ) {
+									 ( materialParams.map !== undefined &&
+										 ( materialParams.map.format === THREE.AlphaFormat ||
+											 materialParams.map.format === THREE.RGBAFormat ||
+											 materialParams.map.format === THREE.LuminanceAlphaFormat ) ) ) {
 
 								materialParams.transparent = true;
 
@@ -2208,11 +2237,11 @@ THREE.GLTF2Loader = ( function () {
 					}
 
 					if ( node.extensions
-							 && node.extensions[ EXTENSIONS.KHR_MATERIALS_COMMON ]
-							 && node.extensions[ EXTENSIONS.KHR_MATERIALS_COMMON ].light ) {
+							 && node.extensions[ EXTENSIONS.KHR_LIGHTS ]
+							 && node.extensions[ EXTENSIONS.KHR_LIGHTS ].light ) {
 
-						var extensionLights = extensions[ EXTENSIONS.KHR_MATERIALS_COMMON ].lights;
-						var light = extensionLights[ node.extensions[ EXTENSIONS.KHR_MATERIALS_COMMON ].light ];
+						var extensionLights = extensions[ EXTENSIONS.KHR_LIGHTS ].lights;
+						var light = extensionLights[ node.extensions[ EXTENSIONS.KHR_LIGHTS ].light ];
 
 						_node.add( light );
 
