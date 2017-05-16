@@ -2111,6 +2111,47 @@ THREE.GLTF2Loader = ( function () {
 						meshNode = new THREE.Mesh( geometry, material );
 						meshNode.castShadow = true;
 
+						if ( primitive.targets !== undefined ) {
+
+							// Hack to force creation of meshNode.morphTargetInfluences.
+							geometry.morphTargets = [];
+
+							for ( var i = 0; i < primitive.targets.length; i++ ) {
+
+								var target = primitive.targets[ i ];
+								geometry.morphTargets.push( { name: 'morphTarget' + i } );
+
+								if ( 'POSITION' in target ) {
+
+									material.morphTargets = true;
+									geometry.morphAttributes.position = geometry.morphAttributes.position || [];
+									geometry.morphAttributes.position.push( dependencies.accessors[ target.POSITION ] );
+
+								}
+
+								if ( 'NORMAL' in target ) {
+
+									material.morphNormals = true;
+									geometry.morphAttributes.normal = geometry.morphAttributes.normal || [];
+									geometry.morphAttributes.normal.push( dependencies.accessors[ target.NORMAL ] );
+
+								}
+
+							}
+
+							meshNode.updateMorphTargets();
+
+							for ( i = 0; i < primitive.targets.length; i++ ) {
+
+								var weight = mesh.weights ? mesh.weights[ i ] : 0;
+								meshNode.morphTargetInfluences[ i ] = weight;
+
+							}
+
+							material.needsUpdate = true;
+
+						}
+
 					} else if ( primitive.mode === WEBGL_CONSTANTS.LINES ) {
 
 						geometry = new THREE.BufferGeometry();
