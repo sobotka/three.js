@@ -112,6 +112,12 @@ THREE.GLTF2Loader = ( function () {
 
 				}
 
+				if ( json.extensionsUsed && json.extensionsUsed.indexOf( EXTENSIONS.KHR_DRACO_MESH_COMPRESSION ) >= 0 ) {
+
+					extensions[ EXTENSIONS.KHR_DRACO_MESH_COMPRESSION ] = new GLTFDracoMeshCompressionExtension();
+
+				}
+
 			}
 
 			console.time( 'GLTF2Loader' );
@@ -303,6 +309,7 @@ THREE.GLTF2Loader = ( function () {
 
 	var EXTENSIONS = {
 		KHR_BINARY_GLTF: 'KHR_binary_glTF',
+		KHR_DRACO_MESH_COMPRESSION: 'KHR_draco_mesh_compression',
 		KHR_LIGHTS: 'KHR_lights',
 		KHR_MATERIALS_COMMON: 'KHR_materials_common',
 		KHR_MATERIALS_PBR_SPECULAR_GLOSSINESS: 'KHR_materials_pbrSpecularGlossiness',
@@ -557,6 +564,45 @@ THREE.GLTF2Loader = ( function () {
 		}
 
 	}
+
+	/**
+	 * DRACO Mesh Compression Extension
+	 *
+	 * Specification: https://github.com/KhronosGroup/glTF/pull/874
+	 */
+	function GLTFDracoMeshCompressionExtension () {
+
+		this.name = EXTENSIONS.KHR_DRACO_MESH_COMPRESSION;
+
+		this.dracoLoader = new THREE.DRACOLoader();
+		this.dracoLoader.setDracoDecoderType( {} );
+
+	}
+
+	GLTFDracoMeshCompressionExtension.prototype.decodePrimitive = function ( primitive, dependencies, onDecode ) {
+
+		var bufferViewID = primitive.extensions[ this.name ].bufferView;
+		var bufferView = dependencies.bufferViews[ bufferViewID ];
+
+		var dracoLoader = this.dracoLoader;
+
+		dracoLoader.decodeDracoFile( bufferView, onDecode );
+
+		// dracoLoader.isVersionSupported( primitive.extensions[ this.name ], function ( isSupported ) {
+
+		// 	if ( isSupported ) {
+
+		// 		dracoLoader.decodeDracoFile( bufferView, onDecode );
+
+		// 	} else {
+
+		// 		throw new Error( 'GLTF2Loader: Incompatible Draco asset version: ' + extension.version + '.' );
+
+		// 	}
+
+		// } );
+
+	};
 
 	/**
 	 * WebGL Technique Extension
@@ -2226,9 +2272,9 @@ THREE.GLTF2Loader = ( function () {
 				// Normal map textures use OpenGL conventions:
 				// https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#materialnormaltexture
 				_material.normalScale.x = -1;
-				
+
 				_material.userData = material.extras;
-				
+
 				return _material;
 
 			} );
@@ -2249,6 +2295,18 @@ THREE.GLTF2Loader = ( function () {
 		] ).then( function ( dependencies ) {
 
 			return _each( primitives, function ( primitive ) {
+
+				if ( primitive.extensions && primitive.extensions[ EXTENSIONS.KHR_DRACO_MESH_COMPRESSION ] ) {
+
+					var dracoExtension = extensions[ EXTENSIONS.KHR_DRACO_MESH_COMPRESSION ];
+
+					return new Promise( function ( resolve ) {
+
+						dracoExtension.decodePrimitive( primitive, dependencies, resolve );
+
+					} );
+
+				}
 
 				var geometry = new THREE.BufferGeometry();
 
