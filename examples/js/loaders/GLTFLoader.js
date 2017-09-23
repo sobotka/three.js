@@ -262,7 +262,9 @@ THREE.GLTFLoader = ( function () {
 
 				}
 
-				lightNode.name = light.name || ( 'light_' + lightId );
+				lightNode.name = light.name
+					? THREE.PropertyBinding.sanitizeNodeName( light.name )
+					: ( 'light_' + lightId );
 				this.lights[ lightId ] = lightNode;
 
 			}
@@ -1893,7 +1895,9 @@ THREE.GLTFLoader = ( function () {
 
 						}
 
-						mesh.name = meshDef.name || ( 'mesh_' + meshIndex );
+						mesh.name = meshDef.name
+							? THREE.PropertyBinding.sanitizeNodeName( meshDef.name )
+							: ( 'mesh_' + meshIndex );
 						mesh.name += i > 0 ? ( '_' + i ) : '';
 
 						if ( primitive.targets !== undefined ) {
@@ -1925,7 +1929,7 @@ THREE.GLTFLoader = ( function () {
 
 		var json = this.json;
 
-		return _each( json.cameras, function ( camera ) {
+		return _each( json.cameras, function ( camera, cameraIndex ) {
 
 			var _camera;
 
@@ -1951,7 +1955,10 @@ THREE.GLTFLoader = ( function () {
 
 			}
 
-			if ( camera.name !== undefined ) _camera.name = camera.name;
+			_camera.name = camera.name !== undefined
+				? THREE.PropertyBinding.sanitizeNodeName( camera.name )
+				: ( 'camera_' + cameraIndex );
+
 			if ( camera.extras ) _camera.userData = camera.extras;
 
 			return _camera;
@@ -2309,7 +2316,7 @@ THREE.GLTFLoader = ( function () {
 			return _each( json.scenes, function ( scene ) {
 
 				var _scene = new THREE.Scene();
-				if ( scene.name !== undefined ) _scene.name = scene.name;
+				if ( scene.name !== undefined ) _scene.name = THREE.PropertyBinding.sanitizeNodeName( scene.name );
 
 				if ( scene.extras ) _scene.userData = scene.extras;
 
