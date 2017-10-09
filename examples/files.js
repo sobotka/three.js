@@ -1,4 +1,4 @@
-var files = {
+export const files = {
 	"webgl": [
 		"webgl_animation_cloth",
 		"webgl_animation_keyframes_json",
