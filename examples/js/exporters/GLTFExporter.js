@@ -46,10 +46,26 @@ var PATH_PROPERTIES = {
 	morphTargetInfluences: 'weights'
 };
 
+// Conversion between attributes names in threejs and glTF spec
+var ATTR_NAME_TO_GLTF = {
+	position: 'POSITION',
+	normal: 'NORMAL',
+	uv: 'TEXCOORD_0',
+	uv2: 'TEXCOORD_1',
+	color: 'COLOR_0',
+	skinWeight: 'WEIGHTS_0',
+	skinIndex: 'JOINTS_0'
+};
+
 //------------------------------------------------------------------------------
 // GLTF Exporter
 //------------------------------------------------------------------------------
-THREE.GLTFExporter = function () {};
+THREE.GLTFExporter = function () {
+
+	this.dracoEncoder = null;
+	this.dracoEncoderModule = null;
+
+};
 
 THREE.GLTFExporter.prototype = {
 
@@ -72,6 +88,9 @@ THREE.GLTFExporter.prototype = {
 		};
 
 		options = Object.assign( {}, DEFAULT_OPTIONS, options );
+
+		var dracoEncoder = this.dracoEncoder;
+		var dracoEncoderModule = this.dracoEncoderModule;
 
 		if ( options.animations.length > 0 ) {
 
@@ -753,37 +772,44 @@ THREE.GLTFExporter.prototype = {
 
 			}
 
+			var usedMeshCompression = false;
 
-			if ( geometry.index ) {
+			if ( options.draco === true ) {
 
-				gltfMesh.primitives[ 0 ].indices = processAccessor( geometry.index, geometry );
+				var KHR_draco_mesh_compression = processDracoMesh( geometry, mode );
+
+				if ( KHR_draco_mesh_compression ) {
+
+					gltfMesh.primitives[ 0 ].extensions = { KHR_draco_mesh_compression: KHR_draco_mesh_compression };
+					usedMeshCompression = true;
+
+				}
 
 			}
 
-			// We've just one primitive per mesh
-			var gltfAttributes = gltfMesh.primitives[ 0 ].attributes;
+			if ( !usedMeshCompression ) {
 
-			// Conversion between attributes names in threejs and gltf spec
-			var nameConversion = {
+				if ( geometry.index ) {
 
-				uv: 'TEXCOORD_0',
-				uv2: 'TEXCOORD_1',
-				color: 'COLOR_0',
-				skinWeight: 'WEIGHTS_0',
-				skinIndex: 'JOINTS_0'
+					gltfMesh.primitives[ 0 ].indices = processAccessor( geometry.index, geometry );
 
-			};
+				}
 
-			// @QUESTION Detect if .vertexColors = THREE.VertexColors?
-			// For every attribute create an accessor
-			for ( var attributeName in geometry.attributes ) {
+				// We've just one primitive per mesh
+				var gltfAttributes = gltfMesh.primitives[ 0 ].attributes;
 
-				var attribute = geometry.attributes[ attributeName ];
-				attributeName = nameConversion[ attributeName ] || attributeName.toUpperCase();
+				// @QUESTION Detect if .vertexColors = THREE.VertexColors?
+				// For every attribute create an accessor
+				for ( var attributeName in geometry.attributes ) {
 
-				if ( attributeName.substr( 0, 5 ) !== 'MORPH' ) {
+					var attribute = geometry.attributes[ attributeName ];
+					attributeName = ATTR_NAME_TO_GLTF[ attributeName ];
 
-					gltfAttributes[ attributeName ] = processAccessor( attribute, geometry );
+					if ( attributeName.substr( 0, 5 ) !== 'MORPH' ) {
+
+						gltfAttributes[ attributeName ] = processAccessor( attribute, geometry );
+
+					}
 
 				}
 
@@ -802,7 +828,7 @@ THREE.GLTFExporter.prototype = {
 					for ( var attributeName in geometry.morphAttributes ) {
 
 						var attribute = geometry.morphAttributes[ attributeName ][ i ];
-						attributeName = nameConversion[ attributeName ] || attributeName.toUpperCase();
+						attributeName = ATTR_NAME_TO_GLTF[ attributeName ];
 						target[ attributeName ] = processAccessor( attribute, geometry );
 
 					}
@@ -820,6 +846,110 @@ THREE.GLTFExporter.prototype = {
 			outputJSON.meshes.push( gltfMesh );
 
 			return outputJSON.meshes.length - 1;
+
+		}
+
+		/**
+		 * @param  {THREE.Geometry} geometry
+		 * @param  {number} mode
+		 * @return {Object}
+		 */
+		function processDracoMesh ( geometry, mode ) {
+
+			// Only triangle modes are supported by the spec, and TRIANGLE_FAN is not implemented here yet.
+			if ( mode !== WEBGL_CONSTANTS.TRIANGLES ) return;
+
+			var dracoAttributeTypeMap = {
+				position: dracoEncoderModule.POSITION,
+				normal: dracoEncoderModule.NORMAL,
+				uv: dracoEncoderModule.TEX_COORD,
+				color: dracoEncoderModule.COLOR
+			};
+
+			if  ( !geometry.attributes.position || !geometry.index ) {
+
+				console.warn( 'THREE.GLTFExporter: Skipping compression on geometry without position or indices.' );
+				return;
+
+			}
+
+			var dracoMesh = new dracoEncoderModule.Mesh();
+			var dracoMeshBuilder = new dracoEncoderModule.MeshBuilder();
+
+			// write index
+
+			var indexArray = geometry.index.array;
+
+			if ( indexArray.constructor !== Uint32Array ) {
+
+				indexArray = Uint32Array.from( indexArray );
+
+			}
+
+			dracoMeshBuilder.AddFacesToMesh( dracoMesh, indexArray.length / 3, indexArray );
+
+			// write attributes
+
+			var dracoAttributeIDMap = {};
+
+			for ( var attributeName in geometry.attributes ) {
+
+				var attribute = geometry.attributes[ attributeName ];
+
+				var dracoAttributeType = dracoAttributeTypeMap[ attributeName ] === undefined
+					? dracoEncoderModule.GENERIC
+					: dracoAttributeTypeMap[ attributeName ];
+
+				var dracoAttributeID = dracoMeshBuilder.AddFloatAttributeToMesh(
+					dracoMesh,
+					dracoAttributeType,
+					attribute.count,
+					attribute.itemSize,
+					attribute.array
+				);
+
+				var gltfAttributeName = ATTR_NAME_TO_GLTF[ attributeName ];
+				dracoAttributeIDMap[ gltfAttributeName ] = dracoAttributeID;
+
+			}
+
+			// encode output
+
+			var dracoOutput = new dracoEncoderModule.DracoInt8Array();
+			var dracoOutputSize = dracoEncoder.EncodeMeshToDracoBuffer( dracoMesh, dracoOutput );
+
+			var result;
+
+			if ( dracoOutputSize > 0 ) {
+
+				var encodedIntArray = new Int8Array( new ArrayBuffer( dracoOutputSize ) );
+
+				for ( var i = 0; i < dracoOutputSize; ++i ) {
+
+					encodedIntArray[ i ] = dracoOutput.GetValue( i );
+
+				}
+
+				var encodedAttribute  = new THREE.BufferAttribute( encodedIntArray, 1, false );
+				var bufferView = processBufferView( encodedAttribute, WEBGL_CONSTANTS.UNSIGNED_INT, 0, encodedAttribute.count );
+
+				result = { bufferView: bufferView.id, attributes: dracoAttributeIDMap };
+
+				processExtension( 'KHR_draco_mesh_compression', true );
+
+			} else {
+
+				console.warn( 'THREE.GLTFExporter: Skipping compression on geometry, compressed size was 0.' );
+
+			}
+
+			// clean up
+
+			dracoEncoderModule.destroy( dracoOutput );
+			dracoEncoderModule.destroy( dracoMesh );
+			dracoEncoderModule.destroy( dracoMeshBuilder );
+
+			return result;
 
 		}
 
@@ -1221,6 +1351,28 @@ THREE.GLTFExporter.prototype = {
 
 		}
 
+		function processExtension ( name, isRequired ) {
+
+			var extensionsUsed = outputJSON.extensionsUsed = outputJSON.extensionsUsed || [];
+
+			if ( extensionsUsed.indexOf( name ) === -1 ) {
+
+				extensionsUsed.push( name );
+
+			}
+
+			if ( !isRequired ) return;
+
+			var extensionsRequired = outputJSON.extensionsRequired = outputJSON.extensionsRequired || [];
+
+			if ( extensionsRequired.indexOf( name ) === -1 ) {
+
+				extensionsRequired.push( name );
+
+			}
+
+		}
+
 		function processInput( input ) {
 
 			input = input instanceof Array ? input : [ input ];
@@ -1348,6 +1500,18 @@ THREE.GLTFExporter.prototype = {
 			onDone( outputJSON );
 
 		}
+
+	},
+
+	setDracoEncoderModule: function ( encoderModule ) {
+
+		this.dracoEncoderModule = encoderModule;
+
+	},
+
+	setDracoEncoder: function ( encoder ) {
+
+		this.dracoEncoder = encoder;
 
 	}
 

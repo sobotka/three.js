@@ -33,12 +33,14 @@
 			<label><input id="option_visible" name="visible" type="checkbox" checked="checked"/>Only Visible</label>
 			<label><input id="option_drawrange" name="visible" type="checkbox" checked="checked"/>Truncate drawRange</label>
 			<label><input id="option_binary" name="visible" type="checkbox">Binary (<code>.glb</code>)</label>
+			<label><input id="option_draco" name="visible" type="checkbox">Draco Compression</label>
 		</div>
 
 		<script src="../build/three.js"></script>
 
 		<script src="js/Detector.js"></script>
 		<script src="js/exporters/GLTFExporter.js"></script>
+		<script src="js/loaders/draco/gltf/draco_encoder.js"></script>
 
 		<script>
 
@@ -50,8 +52,26 @@
 					trs: document.getElementById('option_trs').checked,
 					onlyVisible: document.getElementById('option_visible').checked,
 					truncateDrawRange: document.getElementById('option_drawrange').checked,
-					binary: document.getElementById('option_binary').checked
+					binary: document.getElementById('option_binary').checked,
+					draco: document.getElementById('option_draco').checked
 				};
+
+				var dracoEncoderModule;
+				var dracoEncoder;
+
+				if ( options.draco ) {
+
+					dracoEncoderModule = window.DracoEncoderModule();
+
+					dracoEncoder = new dracoEncoderModule.Encoder();
+					dracoEncoder.SetSpeedOptions( 3, 3 );
+					dracoEncoder.SetEncodingMethod( dracoEncoderModule.MESH_EDGEBREAKER_ENCODING );
+
+					gltfExporter.setDracoEncoderModule( dracoEncoderModule );
+					gltfExporter.setDracoEncoder( dracoEncoder );
+
+				}
+
 				gltfExporter.parse( input, function( result ) {
 
 					if ( result instanceof ArrayBuffer ) {
@@ -63,6 +83,12 @@
 						var output = JSON.stringify( result, null, 2 );
 						console.log( output );
 						saveString( output, 'scene.gltf' );
+
+					}
+
+					if ( dracoEncoderModule !== undefined ) {
+
+						dracoEncoderModule.destroy( dracoEncoder );
 
 					}
 
