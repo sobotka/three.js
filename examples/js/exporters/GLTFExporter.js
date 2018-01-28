@@ -99,12 +99,18 @@ THREE.GLTFExporter.prototype = {
 
 		}
 
+		if ( options.draco && ( !dracoEncoder || !dracoEncoderModule ) ) {
+
+			throw new Error( 'THREE.GLTFExporter: Enabling `options.draco` requires a DracoEncoderModule and DracoEncoderModule.Encoder.' );
+
+		}
+
 		var outputJSON = {
 
 			asset: {
 
-				version: "2.0",
-				generator: "THREE.GLTFExporter"
+				version: '2.0',
+				generator: 'THREE.GLTFExporter (' + THREE.REVISION + ')'
 
 			}
 
