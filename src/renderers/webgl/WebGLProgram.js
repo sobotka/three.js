@@ -83,6 +83,9 @@ function generateExtensions( extensions, parameters, rendererExtensions ) {
 
 	extensions = extensions || {};
 
+	// TODO(donmccurdy): derivatives &= ( bumpMap || normalMap) && !vertexTangents
+	// TODO(donmccurdy): Compare to https://github.com/mrdoob/three.js/commit/0c42f988767974af6dce5baa66134bab30ea887e?w=1
+
 	var chunks = [
 		( extensions.derivatives || parameters.envMapCubeUV || parameters.bumpMap || parameters.normalMap || parameters.flatShading ) ? '#extension GL_OES_standard_derivatives : enable' : '',
 		( extensions.fragDepth || parameters.logarithmicDepthBuffer ) && rendererExtensions.get( 'EXT_frag_depth' ) ? '#extension GL_EXT_frag_depth : enable' : '',
@@ -354,6 +357,8 @@ function WebGLProgram( renderer, extensions, code, material, shader, parameters 
 			parameters.roughnessMap ? '#define USE_ROUGHNESSMAP' : '',
 			parameters.metalnessMap ? '#define USE_METALNESSMAP' : '',
 			parameters.alphaMap ? '#define USE_ALPHAMAP' : '',
+
+			parameters.vertexTangents ? '#define USE_TANGENT' : '',
 			parameters.vertexColors ? '#define USE_COLOR' : '',
 
 			parameters.flatShading ? '#define FLAT_SHADED' : '',
@@ -384,6 +389,12 @@ function WebGLProgram( renderer, extensions, code, material, shader, parameters 
 			'attribute vec3 position;',
 			'attribute vec3 normal;',
 			'attribute vec2 uv;',
+
+			'#ifdef USE_TANGENT',
+
+			' attribute vec4 tangent;',
+
+			'#endif',
 
 			'#ifdef USE_COLOR',
 
@@ -459,6 +470,8 @@ function WebGLProgram( renderer, extensions, code, material, shader, parameters 
 			parameters.roughnessMap ? '#define USE_ROUGHNESSMAP' : '',
 			parameters.metalnessMap ? '#define USE_METALNESSMAP' : '',
 			parameters.alphaMap ? '#define USE_ALPHAMAP' : '',
+
+			parameters.vertexTangents ? '#define USE_TANGENT' : '',
 			parameters.vertexColors ? '#define USE_COLOR' : '',
 
 			parameters.gradientMap ? '#define USE_GRADIENTMAP' : '',

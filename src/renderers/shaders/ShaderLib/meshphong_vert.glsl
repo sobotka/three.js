@@ -6,6 +6,13 @@ varying vec3 vViewPosition;
 
 	varying vec3 vNormal;
 
+	#ifdef USE_TANGENT
+
+		varying vec3 vTangent;
+		varying vec3 vBinormal;
+
+	#endif
+
 #endif
 
 #include <common>

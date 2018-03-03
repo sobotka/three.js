@@ -158,6 +158,7 @@ function WebGLPrograms( renderer, extensions, capabilities ) {
 
 			combine: material.combine,
 
+			vertexTangents: material.vertexTangents,
 			vertexColors: material.vertexColors,
 
 			fog: !! fog,
