@@ -1059,6 +1059,7 @@ THREE.GLTFLoader = ( function () {
 	var ATTRIBUTES = {
 		POSITION: 'position',
 		NORMAL: 'normal',
+		TANGENT: 'tangent',
 		TEXCOORD_0: 'uv',
 		TEXCOORD0: 'uv', // deprecated
 		TEXCOORD: 'uv', // deprecated
@@ -2171,12 +2172,13 @@ THREE.GLTFLoader = ( function () {
 					}
 
 					// If the material will be modified later on, clone it now.
+					var useVertexTangents = geometry.attributes.tangent !== undefined;
 					var useVertexColors = geometry.attributes.color !== undefined;
 					var useFlatShading = geometry.attributes.normal === undefined;
 					var useSkinning = meshDef.isSkinnedMesh === true;
 					var useMorphTargets = primitive.targets !== undefined;
 
-					if ( useVertexColors || useFlatShading || useSkinning || useMorphTargets ) {
+					if ( useVertexTangents || useVertexColors || useFlatShading || useSkinning || useMorphTargets ) {
 
 						if ( material.isGLTFSpecularGlossinessMaterial ) {
 
@@ -2188,6 +2190,13 @@ THREE.GLTFLoader = ( function () {
 							material = material.clone();
 
 						}
+
+					}
+
+					if ( useVertexTangents ) {
+
+						material.vertexTangents = true;
+						material.needsUpdate = true;
 
 					}
 
