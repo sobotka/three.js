@@ -240,6 +240,21 @@
 
 					var object = gltf.scene;
 
+					object.traverse(function (node) {
+						if (node.isMesh) {
+							console.log('vertexTangents: ' + node.material.vertexTangents);
+						}
+					});
+
+					// object.traverse(function (node) {
+					// 	if (node.isMesh) {
+					// 		var material = new THREE.MeshNormalMaterial();
+					// 		material.vertexTangents = true;
+					// 		material.normalMap = node.material.normalMap;
+					// 		node.material = material;
+					// 	}
+					// });
+
 					status.innerHTML = "Load time: " + ( performance.now() - loadStartTime ).toFixed( 2 ) + " ms.";
 
 					if (sceneInfo.cameraPos)

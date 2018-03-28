@@ -39,6 +39,13 @@ void main() {
 
 	vNormal = normalize( transformedNormal );
 
+	#ifdef USE_TANGENT
+
+		vTangent = normalize( transformedTangent );
+		vBinormal = normalize( cross( vNormal, vTangent ) * tangent.w );
+
+	#endif
+
 #endif
 
 	#include <begin_vertex>

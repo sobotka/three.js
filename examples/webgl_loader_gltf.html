@@ -91,6 +91,13 @@
 
 					gltf.scene.traverse( function ( child ) {
 
+						// if (child.isMesh) {
+						// 	var material = new THREE.MeshNormalMaterial();
+						// 	material.vertexTangents = true;
+						// 	material.normalMap = child.material.normalMap;
+						// 	child.material = material;
+						// }
+
 						if ( child.isMesh ) {
 
 							child.material.envMap = envMap;
