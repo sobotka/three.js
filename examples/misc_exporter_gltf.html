@@ -32,16 +32,20 @@
 			<br/>
 			<label><input id="option_trs" name="trs" type="checkbox"/>TRS</label>
 			<label><input id="option_visible" name="visible" type="checkbox" checked="checked"/>Only Visible</label>
-			<label><input id="option_drawrange" name="visible" type="checkbox" checked="checked"/>Truncate drawRange</label>
-			<label><input id="option_binary" name="visible" type="checkbox">Binary (<code>.glb</code>)</label>
-			<label><input id="option_forceindices" name="visible" type="checkbox">Force indices</label>
-			<label><input id="option_forcepot" name="visible" type="checkbox">Force POT textures</label>
+			<label><input id="option_drawrange" name="drawrange" type="checkbox" checked="checked"/>Truncate drawRange</label>
+			<label><input id="option_binary" name="binary" type="checkbox">Binary (<code>.glb</code>)</label>
+			<label><input id="option_forceindices" name="forceindices" type="checkbox">Force indices</label>
+			<label><input id="option_forcepot" name="forcepot" type="checkbox">Force POT textures</label>
+			<br/>
+			<label><input id="upload" name="upload" type="file">Upload GLB</label>
 		</div>
 
 		<script src="../build/three.js"></script>
 
 		<script src="js/Detector.js"></script>
+		<script src="js/controls/OrbitControls.js"></script>
 		<script src="js/loaders/OBJLoader.js"></script>
+		<script src="js/loaders/GLTFLoader.js"></script>
 		<script src="js/exporters/GLTFExporter.js"></script>
 
 		<script>
@@ -161,7 +165,7 @@
 				// ---------------------------------------------------------------------
 				// Perspective Camera
 				// ---------------------------------------------------------------------
-				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
+				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.01, 10000 );
 				camera.position.set(600, 400, 0);
 
 				camera.name = "PerspectiveCamera";
@@ -506,9 +510,47 @@
 				scene2 = new THREE.Scene();
 				object = new THREE.Mesh( new THREE.BoxBufferGeometry( 100, 100, 100 ), material );
 				object.position.set( 0, 0, 0 );
-				object.name = "Cube2ndScene";
+				object.name = 'Cube2ndScene';
 				scene2.name = 'Scene2';
 				scene2.add(object);
+
+
+				// ---------------------------------------------------------------------
+				// Upload GLB
+				// ---------------------------------------------------------------------
+				var uploadInput = document.querySelector( 'input[name=upload]' );
+
+				uploadInput.addEventListener( 'change', function () {
+
+					var fileReader = new FileReader();
+
+					fileReader.onload = function() {
+
+						var loader = new THREE.GLTFLoader();
+						loader.parse( this.result, './', function ( gltf ) {
+
+							if ( sphere.parent ) scene1.remove( sphere );
+
+							gltf.scene.scale.set( 100, 100, 100 );
+							scene1.add( gltf.scene );
+
+						}, function ( e ) {
+
+							console.error( 'Failed to parse upload: ' + e );
+
+						} );
+					};
+
+					fileReader.readAsArrayBuffer( uploadInput.files[ 0 ] );
+
+				} );
+
+				//
+
+				var controls = new THREE.OrbitControls( camera );
+				controls.target.set( 0, 0, 0 );
+				controls.autorotate = true;
+				controls.update();
 
 				//
 
@@ -545,12 +587,6 @@
 
 			function render() {
 
-				var timer = Date.now() * 0.0001;
-
-				camera.position.x = Math.cos( timer ) * 800;
-				camera.position.z = Math.sin( timer ) * 800;
-
-				camera.lookAt( scene1.position );
 				renderer.render( scene1, camera );
 
 			}
