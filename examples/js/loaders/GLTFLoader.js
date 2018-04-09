@@ -1830,6 +1830,9 @@ THREE.GLTFLoader = ( function () {
 
 			}
 
+			// In glTF, UV coordinates (0, 0) correspond to the upper left corner of a texture image. In
+			// three.js that would be lower-left, so we disable the default `texture.flipY`.
+			// See: https://github.com/mrdoob/three.js/pull/13784
 			texture.flipY = false;
 
 			if ( textureDef.name !== undefined ) texture.name = textureDef.name;
@@ -2024,8 +2027,9 @@ THREE.GLTFLoader = ( function () {
 
 			if ( materialDef.name !== undefined ) material.name = materialDef.name;
 
-			// Normal map textures use OpenGL conventions:
-			// https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#materialnormaltexture
+			// Both glTF and three.js use the OpenGL normal map convention, but in glTF uv ( 0, 0 ) is the upper-left.
+			// To handle that, we set `texture.flipY = false` on all glTF textures and invert `normalScale.y`.
+			// See: https://github.com/mrdoob/three.js/pull/13784
 			if ( material.normalScale ) {
 
 				material.normalScale.y = - material.normalScale.y;
