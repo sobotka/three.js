@@ -599,9 +599,12 @@ THREE.GLTFExporter.prototype = {
 		/**
 		 * Process image
 		 * @param  {Texture} map Texture to process
+		 * @param  {Boolean} flipY Whether to require a vertical flip, in addition to map.flipY
 		 * @return {Integer}     Index of the processed texture in the "images" array
 		 */
-		function processImage( map ) {
+		function processImage( map, flipY ) {
+
+			flipY = flipY || false;
 
 			// @TODO Cache
 
@@ -632,7 +635,7 @@ THREE.GLTFExporter.prototype = {
 
 				var ctx = canvas.getContext( '2d' );
 
-				if ( map.flipY === true ) {
+				if ( map.flipY !== flipY ) {
 
 					ctx.translate( 0, canvas.height );
 					ctx.scale( 1, - 1 );
@@ -708,9 +711,10 @@ THREE.GLTFExporter.prototype = {
 		/**
 		 * Process texture
 		 * @param  {Texture} map Map to process
+		 * @param  {Boolean} flipY Whether to require a vertical flip, in addition to map.flipY
 		 * @return {Integer}     Index of the processed texture in the "textures" array
 		 */
-		function processTexture( map ) {
+		function processTexture( map, flipY ) {
 
 			if ( cachedData.textures.has( map ) ) {
 
@@ -727,7 +731,7 @@ THREE.GLTFExporter.prototype = {
 			var gltfTexture = {
 
 				sampler: processSampler( map ),
-				source: processImage( map )
+				source: processImage( map, flipY )
 
 			};
 
@@ -872,23 +876,26 @@ THREE.GLTFExporter.prototype = {
 			// normalTexture
 			if ( material.normalMap ) {
 
-				gltfMaterial.normalTexture = {
+				gltfMaterial.normalTexture = {};
 
-					index: processTexture( material.normalMap )
+				var flipY = false;
+				var scale = material.normalScale;
 
-				};
+				if ( scale.y === -1 && scale.x === 1 ) {
 
-				if ( material.normalScale.x !== - 1 ) {
+					flipY = true;
 
-					if ( material.normalScale.x !== material.normalScale.y ) {
+				} else if ( scale.x === scale.y && scale.x !== 1 ) {
 
-						console.warn( 'THREE.GLTFExporter: Normal scale components are different, ignoring Y and exporting X.' );
+					gltfMaterial.normalTexture.scale = scale.x;
 
-					}
+				} else if ( scale.x !== scale.y ) {
 
-					gltfMaterial.normalTexture.scale = material.normalScale.x;
+					console.warn( 'THREE.GLTFExporter: Normal scale components must match. Skipping both.' );
 
 				}
+
+				gltfMaterial.normalTexture.index = processTexture( material.normalMap, flipY );
 
 			}
 
