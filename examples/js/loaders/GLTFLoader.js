@@ -372,7 +372,7 @@ THREE.GLTFLoader = ( function () {
 
 			if ( metallicRoughness.baseColorTexture !== undefined ) {
 
-				pending.push( parser.assignTexture( materialParams, 'map', metallicRoughness.baseColorTexture.index ) );
+				pending.push( parser.assignTexture( materialParams, 'map', metallicRoughness.baseColorTexture ) );
 
 			}
 
@@ -655,7 +655,7 @@ THREE.GLTFLoader = ( function () {
 
 				if ( pbrSpecularGlossiness.diffuseTexture !== undefined ) {
 
-					pending.push( parser.assignTexture( params, 'map', pbrSpecularGlossiness.diffuseTexture.index ) );
+					pending.push( parser.assignTexture( params, 'map', pbrSpecularGlossiness.diffuseTexture ) );
 
 				}
 
@@ -671,9 +671,8 @@ THREE.GLTFLoader = ( function () {
 
 				if ( pbrSpecularGlossiness.specularGlossinessTexture !== undefined ) {
 
-					var specGlossIndex = pbrSpecularGlossiness.specularGlossinessTexture.index;
-					pending.push( parser.assignTexture( params, 'glossinessMap', specGlossIndex ) );
-					pending.push( parser.assignTexture( params, 'specularMap', specGlossIndex ) );
+					pending.push( parser.assignTexture( params, 'glossinessMap', pbrSpecularGlossiness.specularGlossinessTexture ) );
+					pending.push( parser.assignTexture( params, 'specularMap', pbrSpecularGlossiness.specularGlossinessTexture ) );
 
 				}
 
@@ -2071,17 +2070,23 @@ THREE.GLTFLoader = ( function () {
 	 * @param {number} textureIndex
 	 * @return {Promise}
 	 */
-	GLTFParser.prototype.assignTexture = function ( material, textureName, textureIndex, textureComponent ) {
+	GLTFParser.prototype.assignTexture = function ( material, textureName, mapDef, textureComponent ) {
 
-		return this.getDependency( 'texture', textureIndex ).then( function ( texture ) {
+		return this.getDependency( 'texture', mapDef.index ).then( function ( texture ) {
 
 			var factorNode = material[ textureName ];
-			var textureNode = new THREE.TextureNode( texture );
+			var textureNode = new THREE.TextureNode( texture, new THREE.UVNode( mapDef.texCoord ) );
 
 			// baseColorTexture and emissiveTexture use sRGB encoding.
 			if ( textureName === 'color' || textureName === 'emissive' ) {
 
 				textureNode.value.encoding = THREE.sRGBEncoding;
+
+			}
+
+			if ( textureName === 'color' ) {
+
+				material.alpha = new THREE.OperatorNode( material.alpha, new THREE.SwitchNode( textureNode, 'w' ), THREE.OperatorNode.MUL );
 
 			}
 
@@ -2159,7 +2164,7 @@ THREE.GLTFLoader = ( function () {
 
 			if ( metallicRoughness.baseColorTexture !== undefined ) {
 
-				pending.push( parser.assignTexture( material, 'color', metallicRoughness.baseColorTexture.index ) );
+				pending.push( parser.assignTexture( material, 'color', metallicRoughness.baseColorTexture ) );
 
 			}
 
@@ -2168,9 +2173,8 @@ THREE.GLTFLoader = ( function () {
 
 			if ( metallicRoughness.metallicRoughnessTexture !== undefined ) {
 
-				var textureIndex = metallicRoughness.metallicRoughnessTexture.index;
-				pending.push( parser.assignTexture( material, 'metalness', textureIndex, 'z' ) );
-				pending.push( parser.assignTexture( material, 'roughness', textureIndex, 'y' ) );
+				pending.push( parser.assignTexture( material, 'metalness', metallicRoughness.metallicRoughnessTexture, 'z' ) );
+				pending.push( parser.assignTexture( material, 'roughness', metallicRoughness.metallicRoughnessTexture, 'y' ) );
 
 			}
 
@@ -2194,7 +2198,7 @@ THREE.GLTFLoader = ( function () {
 
 			if ( alphaMode === ALPHA_MODES.MASK ) {
 
-				material.alphaTest = materialDef.alphaCutoff !== undefined ? materialDef.alphaCutoff : 0.5;
+				material.define( 'ALPHATEST', materialDef.alphaCutoff !== undefined ? materialDef.alphaCutoff : 0.5 );
 
 			}
 
@@ -2202,7 +2206,7 @@ THREE.GLTFLoader = ( function () {
 
 		if ( materialDef.normalTexture !== undefined && materialType !== THREE.MeshBasicMaterial) {
 
-			pending.push( parser.assignTexture( material, 'normal', materialDef.normalTexture.index ) );
+			pending.push( parser.assignTexture( material, 'normal', materialDef.normalTexture ) );
 
 			// Normal map textures use OpenGL conventions:
 			// https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#materialnormaltexture
@@ -2226,7 +2230,7 @@ THREE.GLTFLoader = ( function () {
 
 			}
 
-			pending.push( parser.assignTexture( material, 'ao', materialDef.occlusionTexture.index, 'x' ) );
+			pending.push( parser.assignTexture( material, 'ao', materialDef.occlusionTexture, 'x' ) );
 
 		}
 
@@ -2240,7 +2244,7 @@ THREE.GLTFLoader = ( function () {
 
 		if ( materialDef.emissiveTexture !== undefined && materialType !== THREE.MeshBasicMaterial) {
 
-			pending.push( parser.assignTexture( material, 'emissive', materialDef.emissiveTexture.index ) );
+			pending.push( parser.assignTexture( material, 'emissive', materialDef.emissiveTexture ) );
 
 		}
 
