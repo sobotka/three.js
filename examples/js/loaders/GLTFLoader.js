@@ -2084,6 +2084,7 @@ THREE.GLTFLoader = ( function () {
 
 			}
 
+			// TODO: This is a hack and assumes the texture is PNG.
 			if ( textureName === 'color' ) {
 
 				material.alpha = new THREE.OperatorNode( material.alpha, new THREE.SwitchNode( textureNode, 'w' ), THREE.OperatorNode.MUL );

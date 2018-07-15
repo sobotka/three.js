@@ -144,12 +144,13 @@
 				scene.background = envMap;
 
 				light = new THREE.HemisphereLight( 0xbbbbff, 0x444422 );
+				light.intensity = 3.0;
 				light.position.set( 0, 1, 0 );
 				scene.add( light );
 
 				// model
 				var loader = new THREE.GLTFLoader();
-				loader.load( 'models/gltf/DamagedHelmet/glTF/DamagedHelmet.gltf', function ( gltf ) {
+				loader.load( 'models/gltf/forest_demo/scene.gltf', function ( gltf ) {
 
 					gltf.scene.traverse( function ( child ) {
 
@@ -162,6 +163,8 @@
 						}
 
 					} );
+
+					gltf.scene.scale.set( 0.1, 0.1, 0.1 );
 
 					scene.add( gltf.scene );
 
