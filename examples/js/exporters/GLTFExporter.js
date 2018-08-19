@@ -278,6 +278,108 @@ THREE.GLTFExporter.prototype = {
 		}
 
 		/**
+		 * Merges any KeyframeTracks that animate morph targets on a single object.
+		 *
+		 * @param  {Array<KeyframeTrack>} originalTracks
+		 * @param  {THREE.Object3D} root
+		 * @return {Array<KeyframeTrack>}
+		 */
+		function mergeMorphTargetTracks( originalTracks, root ) {
+
+			var tracks = [];
+			var morphTracks = {};
+
+			for ( var i = 0; i < originalTracks.length; ++ i ) {
+
+				var track = originalTracks[ i ];
+				var trackBinding = THREE.PropertyBinding.parseTrackName( track.name );
+				var trackNode = THREE.PropertyBinding.findNode( root, trackBinding.nodeName );
+
+				if ( trackBinding.propertyName !== 'morphTargetInfluences' ) {
+
+					tracks.push( track );
+					continue;
+
+				}
+
+				if ( track.createInterpolant.isInterpolantFactoryMethodGLTFCubicSpline === true ) {
+
+					console.warn( 'THREE.AnimationUtils: Morph target animation with glTF "CUBICSPLINE" interpolation not yet supported.' );
+					continue;
+
+				}
+
+				if ( morphTracks[ trackNode.uuid ] === undefined ) {
+
+					morphTracks[ trackNode.uuid ] = {
+						name: '.morphTargetInfluences',
+						times: [],
+						values: [],
+						numInfluences: trackNode.morphTargetInfluences.length,
+						defaultValue: Array.from( new Float32Array( trackNode.morphTargetInfluences.length ) ),
+						interpolation: track.getInterpolation()
+					};
+
+				}
+
+				var morphTrack = morphTracks[ trackNode.uuid ];
+				var trackTimesIndex = 0;
+				var trackInfluenceIndex = trackNode.morphTargetDictionary[ trackBinding.propertyIndex ];
+
+				if ( trackInfluenceIndex === undefined ) {
+
+					// TODO: Is it possible for 'propertyIndex' to be a numeric index? If so, just handle that.
+					throw new Error( 'THREE.AnimationUtils: Morph target name not found: ' + trackBinding.propertyIndex );
+
+				}
+
+				for ( var j = 0; j < morphTrack.times.length; ++ j ) {
+
+					while ( morphTrack.times[ j ] > track.times[ trackTimesIndex ] ) {
+
+						morphTrack.times.splice( j, 0, track.times[ trackTimesIndex ] );
+						morphTrack.values.splice( j, 0, morphTrack.defaultValue.slice() );
+						morphTrack.values[ j ][ trackInfluenceIndex ] = track.values[ trackTimesIndex ];
+
+						if ( ++trackTimesIndex > track.times.length ) break;
+
+					}
+
+					if ( morphTrack.times[ j ] === track.times[ trackTimesIndex ] ) {
+
+						morphTrack.values[ j ][ trackInfluenceIndex ] = track.values[ trackTimesIndex ];
+
+						if ( ++trackTimesIndex > track.times.length ) break;
+
+					}
+
+				}
+
+				while ( track.times.length > trackTimesIndex ) {
+
+					morphTrack.times.push( track.times[ trackTimesIndex ] );
+					morphTrack.values.push( morphTrack.defaultValue.slice() );
+					morphTrack.values[ morphTrack.values.length - 1 ][ trackInfluenceIndex ] = track.values[ trackTimesIndex ];
+
+					trackTimesIndex++;
+
+				}
+
+			}
+
+			for ( var name in morphTracks ) {
+
+				var t = morphTracks[ name ];
+				t.values = [].concat.apply( [], t.values );
+				tracks.push( new THREE.KeyframeTrack( t.name, t.times, t.values, t.interpolation ) );
+
+			}
+
+			return tracks;
+
+		}
+
+		/**
 		 * Get the required size + padding for a buffer, rounded to the next 4-byte boundary.
 		 * https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#data-alignment
 		 *
@@ -1361,12 +1463,13 @@ THREE.GLTFExporter.prototype = {
 
 			}
 
+			var tracks = mergeMorphTargetTracks( clip.tracks, root );
 			var channels = [];
 			var samplers = [];
 
-			for ( var i = 0; i < clip.tracks.length; ++ i ) {
+			for ( var i = 0; i < tracks.length; ++ i ) {
 
-				var track = clip.tracks[ i ];
+				var track = tracks[ i ];
 				var trackBinding = THREE.PropertyBinding.parseTrackName( track.name );
 				var trackNode = THREE.PropertyBinding.findNode( root, trackBinding.nodeName );
 				var trackProperty = PATH_PROPERTIES[ trackBinding.propertyName ];
@@ -1396,16 +1499,6 @@ THREE.GLTFExporter.prototype = {
 				var outputItemSize = track.values.length / track.times.length;
 
 				if ( trackProperty === PATH_PROPERTIES.morphTargetInfluences ) {
-
-					if ( trackNode.morphTargetInfluences.length !== 1 &&
-						trackBinding.propertyIndex !== undefined ) {
-
-						console.warn( 'THREE.GLTFExporter: Skipping animation track "%s". ' +
-							'Morph target keyframe tracks must target all available morph targets ' +
-							'for the given mesh.', track.name );
-						continue;
-
-					}
 
 					outputItemSize /= trackNode.morphTargetInfluences.length;
 
