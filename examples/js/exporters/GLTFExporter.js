@@ -277,6 +277,30 @@ THREE.GLTFExporter.prototype = {
 
 		}
 
+		function getUintTypedArray ( maxValue ) {
+
+			if ( maxValue <= 255 ) return Uint8Array;
+
+			if ( maxValue <= 65535 ) return Uint16Array;
+
+			if ( maxValue <= 4294967295 ) return Uint32Array;
+
+			return null;
+
+		}
+
+		function getUintComponentType ( maxValue ) {
+
+			if ( maxValue <= 255 ) return WEBGL_CONSTANTS.UNSIGNED_BYTE;
+
+			if ( maxValue <= 65535 ) return WEBGL_CONSTANTS.UNSIGNED_SHORT;
+
+			if ( maxValue <= 4294967295 ) return WEBGL_CONSTANTS.UNSIGNED_INT;
+
+			return null;
+
+		}
+
 		/**
 		 * Merges any KeyframeTracks that animate morph targets on a single object.
 		 *
@@ -621,9 +645,10 @@ THREE.GLTFExporter.prototype = {
 		 * @param  {THREE.BufferGeometry} geometry (Optional) Geometry used for truncated draw range
 		 * @param  {Integer} start (Optional)
 		 * @param  {Integer} count (Optional)
+		 * @param  {Boolean} sparse (Optional)
 		 * @return {Integer}           Index of the processed accessor on the "accessors" array
 		 */
-		function processAccessor( attribute, geometry, start, count ) {
+		function processAccessor( attribute, geometry, start, count, sparse ) {
 
 			var types = {
 
@@ -697,12 +722,8 @@ THREE.GLTFExporter.prototype = {
 
 			}
 
-			var bufferView = processBufferView( attribute, componentType, start, count, bufferViewTarget );
-
 			var gltfAccessor = {
 
-				bufferView: bufferView.id,
-				byteOffset: bufferView.byteOffset,
 				componentType: componentType,
 				count: count,
 				max: minMax.max,
@@ -710,6 +731,92 @@ THREE.GLTFExporter.prototype = {
 				type: types[ attribute.itemSize ]
 
 			};
+
+			sparseBlock: if ( sparse === true && false ) {
+
+				if ( attribute.isInterleavedBufferAttribute ) {
+
+					throw new Error( 'THREE.GLTFExporter: InterleavedBufferAttribute not yet supported in sparse accessors.' );
+
+				}
+
+				if ( start !== 0 || count !== attribute.count ) {
+
+					throw new Error( 'THREE.GLTFExporter: Unsupported "start" or "count" argument in sparse accessor.' );
+
+				}
+
+				var sparseIndices = [];
+				var sparseValues = [];
+
+				for ( var i = 0; i < attribute.count; ++ i ) {
+
+					for ( var j = 0; j < attribute.itemSize; ++ j ) {
+
+						var value = attribute.array[ i * attribute.itemSize + j ];
+
+						if ( value !== 0 ) {
+
+							sparseIndices.push( i * attribute.itemSize + j );
+							sparseValues.push( value );
+
+						}
+
+					}
+
+				}
+
+				var sizeRatio = sparseValues.length / ( attribute.count * attribute.itemSize / 2 );
+
+				if ( sizeRatio > 1 ) {
+
+					// If there's no filesize benefit, don't use a sparse array.
+					break sparseBlock;
+
+				} else {
+
+					// console.info( `THREE.GLTFExporter: Sparse accessor saving ${ ( 1 - sizeRatio ) * attribute.array.byteLength } bytes.` );
+
+				}
+
+				var maxIndex = Math.max.apply( Math, sparseIndices );
+				var indicesComponentType = getUintComponentType( maxIndex );
+				var IndicesTypedArray = getUintTypedArray( maxIndex );
+
+				if ( indicesComponentType === null || IndicesTypedArray === null ) {
+
+					// If there are too many values to index, don't use a sparse array.
+					break sparseBlock;
+
+				}
+
+				var sparseIndicesAttribute = new THREE.BufferAttribute( new IndicesTypedArray( sparseIndices ), 1 );
+				var sparseValuesAttribute = new THREE.BufferAttribute( new attribute.array.constructor( sparseValues ), 1);
+				var sparseIndicesBufferView = processBufferView( sparseIndicesAttribute, indicesComponentType, 0, sparseIndicesAttribute.count );
+				var sparseValuesBufferView = processBufferView( sparseValuesAttribute, componentType, 0, sparseValuesAttribute.count );
+
+				gltfAccessor.sparse = {
+					count: sparseIndices.length,
+					indices: {
+						bufferView: sparseIndicesBufferView.id,
+						byteOffset: sparseIndicesBufferView.byteOffset,
+						componentType: indicesComponentType
+					},
+					values: {
+						bufferView: sparseValuesBufferView.id,
+						byteOffset: sparseValuesBufferView.byteOffset
+					}
+				};
+
+			}
+
+			if ( gltfAccessor.sparse === undefined ) {
+
+				var bufferView = processBufferView( attribute, componentType, start, count, bufferViewTarget );
+				gltfAccessor.bufferView = bufferView.id;
+				gltfAccessor.byteOffset = bufferView.byteOffset;
+
+			}
 
 			if ( ! outputJSON.accessors ) {
 
@@ -1130,6 +1237,17 @@ THREE.GLTFExporter.prototype = {
 
 					var geometryTemp = new THREE.BufferGeometry();
 					geometryTemp.fromGeometry( geometry );
+
+					// Conversion adds unwanted attributes to the geometry. Remove them.
+					geometryTemp.removeAttribute( 'normal' );
+					// if ( geometry.colors.length === 0 ) geometryTemp.removeAttribute( 'color' );
+
+					if ( THREE.BufferGeometryUtils ) {
+
+						THREE.BufferGeometryUtils.mergeVertices.apply( geometryTemp );
+
+					}
+
 					geometry = geometryTemp;
 
 				}
@@ -1281,7 +1399,7 @@ THREE.GLTFExporter.prototype = {
 
 						}
 
-						target[ attributeName.toUpperCase() ] = processAccessor( relativeAttribute, geometry );
+						target[ attributeName.toUpperCase() ] = processAccessor( relativeAttribute, geometry, undefined, undefined, true );
 
 					}
 
@@ -1497,10 +1615,12 @@ THREE.GLTFExporter.prototype = {
 
 				var inputItemSize = 1;
 				var outputItemSize = track.values.length / track.times.length;
+				var sparse = false;
 
 				if ( trackProperty === PATH_PROPERTIES.morphTargetInfluences ) {
 
 					outputItemSize /= trackNode.morphTargetInfluences.length;
+					sparse = true;
 
 				}
 
@@ -1533,7 +1653,7 @@ THREE.GLTFExporter.prototype = {
 				samplers.push( {
 
 					input: processAccessor( new THREE.BufferAttribute( track.times, inputItemSize ) ),
-					output: processAccessor( new THREE.BufferAttribute( track.values, outputItemSize ) ),
+					output: processAccessor( new THREE.BufferAttribute( track.values, outputItemSize ), undefined, undefined, undefined, sparse ),
 					interpolation: interpolation
 
 				} );
