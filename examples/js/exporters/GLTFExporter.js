@@ -1238,16 +1238,6 @@ THREE.GLTFExporter.prototype = {
 					var geometryTemp = new THREE.BufferGeometry();
 					geometryTemp.fromGeometry( geometry );
 
-					// Conversion adds unwanted attributes to the geometry. Remove them.
-					geometryTemp.removeAttribute( 'normal' );
-					// if ( geometry.colors.length === 0 ) geometryTemp.removeAttribute( 'color' );
-
-					if ( THREE.BufferGeometryUtils ) {
-
-						THREE.BufferGeometryUtils.mergeVertices.apply( geometryTemp );
-
-					}
-
 					geometry = geometryTemp;
 
 				}
