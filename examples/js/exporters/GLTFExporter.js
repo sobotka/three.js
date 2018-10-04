@@ -302,98 +302,121 @@ THREE.GLTFExporter.prototype = {
 		}
 
 		/**
-		 * Merges any KeyframeTracks that animate morph targets on a single object.
+		 * Merges KeyframeTracks that animate morph targets on a given object. In
+		 * three.js it is possible to have separate tracks for each morph target,
+		 * but in glTF a clip must animate all morph targets simultaneously.
 		 *
-		 * @param  {Array<KeyframeTrack>} originalTracks
+		 * @param  {Array<KeyframeTrack>} sourceTracks
 		 * @param  {THREE.Object3D} root
 		 * @return {Array<KeyframeTrack>}
 		 */
-		function mergeMorphTargetTracks( originalTracks, root ) {
+		function mergeMorphTargetTracks( sourceTracks, root ) {
 
 			var tracks = [];
-			var morphTracks = {};
+			var mergedTracks = {};
 
-			for ( var i = 0; i < originalTracks.length; ++ i ) {
+			for ( var i = 0; i < sourceTracks.length; ++ i ) {
 
-				var track = originalTracks[ i ];
-				var trackBinding = THREE.PropertyBinding.parseTrackName( track.name );
-				var trackNode = THREE.PropertyBinding.findNode( root, trackBinding.nodeName );
+				var sourceTrack = sourceTracks[ i ];
+				var sourceTrackBinding = THREE.PropertyBinding.parseTrackName( track.name );
+				var sourceTrackNode = THREE.PropertyBinding.findNode( root, sourceTrackBinding.nodeName );
 
-				if ( trackBinding.propertyName !== 'morphTargetInfluences' ) {
+				if ( sourceTrackBinding.propertyName !== 'morphTargetInfluences' ) {
 
-					tracks.push( track );
+					// Tracks that don't affect morph targets can be kept as-is.
+					tracks.push( sourceTrack );
 					continue;
 
 				}
 
-				if ( track.createInterpolant.isInterpolantFactoryMethodGLTFCubicSpline === true ) {
+				// TODO(donmccurdy): We should never get here with glTF CUBICSPLINE.
+				if ( track.createInterpolant !== track.InterpolantFactoryMethodDiscrete
+					&& track.createInterpolant !== track.InterpolantFactoryMethodLinear ) {
 
-					console.warn( 'THREE.AnimationUtils: Morph target animation with glTF "CUBICSPLINE" interpolation not yet supported.' );
+					console.warn( 'THREE.GLTFExporter: Morph target interpolation mode not yet supported. Using LINEAR instead.' );
+
+					track = track.clone();
+					track.setInterpolation( THREE.InterpolateLinear );
+
+				}
+
+				var targetIndex = sourceTrackNode.morphTargetDictionary[ sourceTrackBinding.propertyIndex ];
+
+				if ( targetIndex === undefined ) {
+
+					throw new Error( 'THREE.AnimationUtils: Morph target name not found: ' + sourceTrackBinding.propertyIndex );
+
+				}
+
+				// If this is the first time we've seen this object, create a new
+				// track to store merged keyframe data for each morph target.
+				if ( mergedTracks[ sourceTrackNode.uuid ] === undefined ) {
+
+					var mergedTrack = track.clone();
+					var targetCount = sourceTrackNode.morphTargetInfluences.length;
+					var values = new mergedTrack.ValueBufferType( targetCount * mergedTrack.times.length );
+
+					for ( var j = 0; j < mergedTrack.times.length; j ++ ) {
+
+						values[ j * targetCount + targetIndex ] = mergedTrack.values[ j ];
+
+					}
+
+					mergedTrack.name = '.morphTargetInfluences';
+					mergedTrack.values = values;
+
+					mergedTracks[ sourceTrackNode.uuid ] = mergedTrack;
+
 					continue;
 
 				}
 
-				if ( morphTracks[ trackNode.uuid ] === undefined ) {
+				var sourceKeyframeIndex = 0;
+				var mergedKeyframeIndex = 0;
 
-					morphTracks[ trackNode.uuid ] = {
-						name: '.morphTargetInfluences',
-						times: [],
-						values: [],
-						numInfluences: trackNode.morphTargetInfluences.length,
-						defaultValue: Array.from( new Float32Array( trackNode.morphTargetInfluences.length ) ),
-						interpolation: track.getInterpolation()
-					};
+				var mergedTrack = mergedTracks[ sourceTrackNode.uuid ];
+				var interpolant = sourceTrack.createInterpolant( [] );
 
-				}
+				// Loop over each keyframe in the merged multi-target track for this
+				// node, adding any missing data from the current single-target track.
+				for ( ; mergedKeyframeIndex < mergedTrack.times.length; mergedKeyframeIndex ++ ) {
 
-				var morphTrack = morphTracks[ trackNode.uuid ];
-				var trackTimesIndex = 0;
-				var trackInfluenceIndex = trackNode.morphTargetDictionary[ trackBinding.propertyIndex ];
+					// If the current keyframe in source single-target track precedes the
+					// current keyframe in the merged track, insert a new keyframe.
+					while ( mergedTrack.times[ mergedKeyframeIndex ] > sourceTrack.times[ sourceKeyframeIndex ] ) {
 
-				if ( trackInfluenceIndex === undefined ) {
+						THREE.AnimationUtils.insertKeyframe( mergedTrack, sourceTrack.times[ sourceKeyframeIndex ] );
+						mergedTrack.values[ mergedKeyframeIndex ][ targetIndex ] = interpolant.copySampleValue_( sourceKeyframeIndex )[ 0 ];
 
-					// TODO: Is it possible for 'propertyIndex' to be a numeric index? If so, just handle that.
-					throw new Error( 'THREE.AnimationUtils: Morph target name not found: ' + trackBinding.propertyIndex );
-
-				}
-
-				for ( var j = 0; j < morphTrack.times.length; ++ j ) {
-
-					while ( morphTrack.times[ j ] > track.times[ trackTimesIndex ] ) {
-
-						morphTrack.times.splice( j, 0, track.times[ trackTimesIndex ] );
-						morphTrack.values.splice( j, 0, morphTrack.defaultValue.slice() );
-						morphTrack.values[ j ][ trackInfluenceIndex ] = track.values[ trackTimesIndex ];
-
-						if ( ++trackTimesIndex > track.times.length ) break;
+						if ( ++sourceKeyframeIndex > sourceTrack.times.length ) break;
 
 					}
 
-					if ( morphTrack.times[ j ] === track.times[ trackTimesIndex ] ) {
+					// If current keyframe exists in the merged track, add current track's
+					// data to that keyframe.
+					if ( mergedTrack.times[ j ] === sourceTrack.times[ sourceKeyframeIndex ] ) {
 
-						morphTrack.values[ j ][ trackInfluenceIndex ] = track.values[ trackTimesIndex ];
+						mergedTrack.values[ j ][ targetIndex ] = interpolant.copySampleValue_( sourceKeyframeIndex )[ 0 ];
 
-						if ( ++trackTimesIndex > track.times.length ) break;
+						if ( ++sourceKeyframeIndex > sourceTrack.times.length ) break;
 
 					}
 
 				}
 
-				while ( track.times.length > trackTimesIndex ) {
+				for ( ; sourceKeyframeIndex <= sourceTrack.times.length; sourceKeyframeIndex ++ ) {
 
-					morphTrack.times.push( track.times[ trackTimesIndex ] );
-					morphTrack.values.push( morphTrack.defaultValue.slice() );
-					morphTrack.values[ morphTrack.values.length - 1 ][ trackInfluenceIndex ] = track.values[ trackTimesIndex ];
-
-					trackTimesIndex++;
+					THREE.AnimationUtils.insertKeyframe( mergedTrack, sourceTrack.times[ sourceKeyframeIndex ] )
+					mergedTrack.values[ mergedTrack.values.length - 1 ][ targetIndex ] = interpolant.copySampleValue_( sourceKeyframeIndex )[ 0 ];
 
 				}
 
 			}
 
-			for ( var name in morphTracks ) {
+			// Create THREE.KeyframeTrack instances from merged data.
+			for ( var name in mergedTracks ) {
 
-				var t = morphTracks[ name ];
+				var t = mergedTracks[ name ];
 				t.values = [].concat.apply( [], t.values );
 				tracks.push( new THREE.KeyframeTrack( t.name, t.times, t.values, t.interpolation ) );
 
