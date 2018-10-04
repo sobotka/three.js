@@ -329,9 +329,16 @@ THREE.GLTFExporter.prototype = {
 
 				}
 
-				// TODO(donmccurdy): We should never get here with glTF CUBICSPLINE.
 				if ( track.createInterpolant !== track.InterpolantFactoryMethodDiscrete
 					&& track.createInterpolant !== track.InterpolantFactoryMethodLinear ) {
+
+					if ( track.createInterpolant.isInterpolantFactoryMethodGLTFCubicSpline ) {
+
+						// This should never happen, because glTF morph target animations
+						// affect all targets already.
+						throw new Error( 'THREE.GLTFExporter: Cannot merge tracks with glTF CUBICSPLINE interpolation.' );
+
+					}
 
 					console.warn( 'THREE.GLTFExporter: Morph target interpolation mode not yet supported. Using LINEAR instead.' );
 
@@ -340,6 +347,7 @@ THREE.GLTFExporter.prototype = {
 
 				}
 
+				var targetCount = sourceTrackNode.morphTargetInfluences.length;
 				var targetIndex = sourceTrackNode.morphTargetDictionary[ sourceTrackBinding.propertyIndex ];
 
 				if ( targetIndex === undefined ) {
@@ -348,12 +356,14 @@ THREE.GLTFExporter.prototype = {
 
 				}
 
+				var mergedTrack;
+
 				// If this is the first time we've seen this object, create a new
 				// track to store merged keyframe data for each morph target.
 				if ( mergedTracks[ sourceTrackNode.uuid ] === undefined ) {
 
-					var mergedTrack = track.clone();
-					var targetCount = sourceTrackNode.morphTargetInfluences.length;
+					mergedTrack = track.clone();
+
 					var values = new mergedTrack.ValueBufferType( targetCount * mergedTrack.times.length );
 
 					for ( var j = 0; j < mergedTrack.times.length; j ++ ) {
@@ -366,6 +376,7 @@ THREE.GLTFExporter.prototype = {
 					mergedTrack.values = values;
 
 					mergedTracks[ sourceTrackNode.uuid ] = mergedTrack;
+					tracks.push( mergedTrack );
 
 					continue;
 
@@ -374,51 +385,14 @@ THREE.GLTFExporter.prototype = {
 				var sourceKeyframeIndex = 0;
 				var mergedKeyframeIndex = 0;
 
-				var mergedTrack = mergedTracks[ sourceTrackNode.uuid ];
-				var interpolant = sourceTrack.createInterpolant( [] );
+				mergedTrack = mergedTracks[ sourceTrackNode.uuid ];
 
-				// Loop over each keyframe in the merged multi-target track for this
-				// node, adding any missing data from the current single-target track.
-				for ( ; mergedKeyframeIndex < mergedTrack.times.length; mergedKeyframeIndex ++ ) {
+				for ( var j = 0; j < sourceTrack.times.length; j ++ ) {
 
-					// If the current keyframe in source single-target track precedes the
-					// current keyframe in the merged track, insert a new keyframe.
-					while ( mergedTrack.times[ mergedKeyframeIndex ] > sourceTrack.times[ sourceKeyframeIndex ] ) {
-
-						THREE.AnimationUtils.insertKeyframe( mergedTrack, sourceTrack.times[ sourceKeyframeIndex ] );
-						mergedTrack.values[ mergedKeyframeIndex ][ targetIndex ] = interpolant.copySampleValue_( sourceKeyframeIndex )[ 0 ];
-
-						if ( ++sourceKeyframeIndex > sourceTrack.times.length ) break;
-
-					}
-
-					// If current keyframe exists in the merged track, add current track's
-					// data to that keyframe.
-					if ( mergedTrack.times[ j ] === sourceTrack.times[ sourceKeyframeIndex ] ) {
-
-						mergedTrack.values[ j ][ targetIndex ] = interpolant.copySampleValue_( sourceKeyframeIndex )[ 0 ];
-
-						if ( ++sourceKeyframeIndex > sourceTrack.times.length ) break;
-
-					}
+					var keyframeIndex = THREE.AnimationUtils.insertKeyframe( mergedTrack, sourceTrack.times[ j ] );
+					mergedTrack.values[ keyframeIndex * targetCount + targetIndex ] = sourceTrack.values[ j ];
 
 				}
-
-				for ( ; sourceKeyframeIndex <= sourceTrack.times.length; sourceKeyframeIndex ++ ) {
-
-					THREE.AnimationUtils.insertKeyframe( mergedTrack, sourceTrack.times[ sourceKeyframeIndex ] )
-					mergedTrack.values[ mergedTrack.values.length - 1 ][ targetIndex ] = interpolant.copySampleValue_( sourceKeyframeIndex )[ 0 ];
-
-				}
-
-			}
-
-			// Create THREE.KeyframeTrack instances from merged data.
-			for ( var name in mergedTracks ) {
-
-				var t = mergedTracks[ name ];
-				t.values = [].concat.apply( [], t.values );
-				tracks.push( new THREE.KeyframeTrack( t.name, t.times, t.values, t.interpolation ) );
 
 			}
 
