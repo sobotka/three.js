@@ -1,5 +1,4 @@
 /**
- * @author TristanVALCKE / https://github.com/Itee
  * @author Don McCurdy / https://www.donmccurdy.com
  */
 /* global QUnit */

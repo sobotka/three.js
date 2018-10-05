@@ -318,7 +318,7 @@ THREE.GLTFExporter.prototype = {
 			for ( var i = 0; i < sourceTracks.length; ++ i ) {
 
 				var sourceTrack = sourceTracks[ i ];
-				var sourceTrackBinding = THREE.PropertyBinding.parseTrackName( track.name );
+				var sourceTrackBinding = THREE.PropertyBinding.parseTrackName( sourceTrack.name );
 				var sourceTrackNode = THREE.PropertyBinding.findNode( root, sourceTrackBinding.nodeName );
 
 				if ( sourceTrackBinding.propertyName !== 'morphTargetInfluences' ) {
@@ -329,10 +329,10 @@ THREE.GLTFExporter.prototype = {
 
 				}
 
-				if ( track.createInterpolant !== track.InterpolantFactoryMethodDiscrete
-					&& track.createInterpolant !== track.InterpolantFactoryMethodLinear ) {
+				if ( sourceTrack.createInterpolant !== sourceTrack.InterpolantFactoryMethodDiscrete
+					&& sourceTrack.createInterpolant !== sourceTrack.InterpolantFactoryMethodLinear ) {
 
-					if ( track.createInterpolant.isInterpolantFactoryMethodGLTFCubicSpline ) {
+					if ( sourceTrack.createInterpolant.isInterpolantFactoryMethodGLTFCubicSpline ) {
 
 						// This should never happen, because glTF morph target animations
 						// affect all targets already.
@@ -342,8 +342,8 @@ THREE.GLTFExporter.prototype = {
 
 					console.warn( 'THREE.GLTFExporter: Morph target interpolation mode not yet supported. Using LINEAR instead.' );
 
-					track = track.clone();
-					track.setInterpolation( THREE.InterpolateLinear );
+					sourceTrack = sourceTrack.clone();
+					sourceTrack.setInterpolation( THREE.InterpolateLinear );
 
 				}
 
@@ -362,7 +362,7 @@ THREE.GLTFExporter.prototype = {
 				// track to store merged keyframe data for each morph target.
 				if ( mergedTracks[ sourceTrackNode.uuid ] === undefined ) {
 
-					mergedTrack = track.clone();
+					mergedTrack = sourceTrack.clone();
 
 					var values = new mergedTrack.ValueBufferType( targetCount * mergedTrack.times.length );
 
