@@ -1,5 +1,6 @@
 import { Color } from '../../math/Color.js';
 import { Vector2 } from '../../math/Vector2.js';
+import { Vector3 } from '../../math/Vector3.js';
 import { Matrix3 } from '../../math/Matrix3.js';
 
 /**
@@ -169,7 +170,17 @@ var UniformsLib = {
 			position: {},
 			width: {},
 			height: {}
-		} }
+		} },
+
+		sh0: { value: new Vector3() },
+		sh1: { value: new Vector3() },
+		sh2: { value: new Vector3() },
+		sh3: { value: new Vector3() },
+		sh4: { value: new Vector3() },
+		sh5: { value: new Vector3() },
+		sh6: { value: new Vector3() },
+		sh7: { value: new Vector3() },
+		sh8: { value: new Vector3() }
 
 	},
 

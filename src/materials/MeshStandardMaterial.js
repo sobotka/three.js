@@ -46,6 +46,8 @@ import { Color } from '../math/Color.js';
  *
  *  refractionRatio: <float>,
  *
+ * 	sphericalHarmonics: Array<float>,
+ *
  *  wireframe: <boolean>,
  *  wireframeLinewidth: <float>,
  *
@@ -100,6 +102,8 @@ function MeshStandardMaterial( parameters ) {
 	this.envMapIntensity = 1.0;
 
 	this.refractionRatio = 0.98;
+
+	this.sphericalHarmonics = null;
 
 	this.wireframe = false;
 	this.wireframeLinewidth = 1;
@@ -162,6 +166,8 @@ MeshStandardMaterial.prototype.copy = function ( source ) {
 	this.envMapIntensity = source.envMapIntensity;
 
 	this.refractionRatio = source.refractionRatio;
+
+	this.sphericalHarmonics = source.sphericalHarmonics;
 
 	this.wireframe = source.wireframe;
 	this.wireframeLinewidth = source.wireframeLinewidth;

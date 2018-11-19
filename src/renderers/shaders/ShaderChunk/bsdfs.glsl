@@ -293,3 +293,55 @@ float GGXRoughnessToBlinnExponent( const in float ggxRoughness ) {
 float BlinnExponentToGGXRoughness( const in float blinnExponent ) {
 	return sqrt( 2.0 / ( blinnExponent + 2.0 ) );
 }
+
+#if defined ( SPHERICAL_HARMONICS )
+
+	vec3 sphericalHarmonicsToIrradiance( const in vec3 N, const in vec3 sh[ 9 ] ) {
+
+		const float c1 = 0.42904276540489171563379376569857; // 4 * Â2.Y22 = 1/4 * sqrt(15.PI)
+		const float c2 = 0.51166335397324424423977581244463; // 0.5 * Â1.Y10 = 1/2 * sqrt(PI/3)
+		const float c3 = 0.24770795610037568833406429782001; // Â2.Y20 = 1/16 * sqrt(5.PI)
+		const float c4 = 0.88622692545275801364908374167057; // Â0.Y00 = 1/2 * sqrt(PI)
+
+		float x = N.x;
+		float y = N.y;
+		float z = N.z;
+
+		return  max( vec3( 0.0 ),
+			(c1*(x*x - y*y)) * sh[8]                     // c1.L22.(x²-y²)
+			+ (c3*(3.0*z*z - 1.0)) * sh[6]                 // c3.L20.(3.z² - 1)
+			+ c4 * sh[0]                                 // c4.L00 
+			+ 2.0*c1*(sh[4]*x*y + sh[7]*x*z + sh[5]*y*z) // 2.c1.(L2-2.xy + L21.xz + L2-1.yz)
+			+ 2.0*c2*(sh[3]*x + sh[1]*y + sh[2]*z) );    // 2.c2.(L11.x + L1-1.y + L10.z)
+
+		// return vec3( 1.0, 0.0, 0.0 );
+
+		// vec4 cAr coefficients[ 0 ]; // first 4 red irradiance coefficients
+		// vec4 cAg coefficients[ 1 ]; // first 4 green irradiance coefficients
+		// vec4 cAb coefficients[ 2 ]; // first 4 blue irradiance coefficients
+		// vec4 cBr coefficients[ 3 ]; // second 4 red irradiance coefficients
+		// vec4 cBg coefficients[ 4 ]; // second 4 green irradiance coefficients
+		// vec4 cBb coefficients[ 5 ]; // second 4 blue irradiance coefficients
+		// vec4 cC coefficients[ 6 ];  // last 1 irradiance coefficient for red, blue and green
+
+		// vec3 x1, x2, x3;
+
+		// // Linear + constant polynomial terms
+		// x1.r = dot(cAr, vNormal);
+		// x1.g = dot(cAg, vNormal);
+		// x1.b = dot(cAb, vNormal);
+
+		// // 4 of the quadratic polynomials
+		// vec4 vB = N.xyzz * N.yzzx;   
+		// x2.r = dot(cBr, vB);
+		// x2.g = dot(cBg, vB);
+		// x2.b = dot(cBb, vB);
+
+		// // Final quadratic polynomial
+		// float vC = N.x * N.x - N.y * N.y;
+		// x3 = cC.rgb * vC;    
+		// return x1 + x2 + x3;
+
+	}
+
+#endif

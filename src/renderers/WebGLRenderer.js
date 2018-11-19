@@ -2218,6 +2218,20 @@ function WebGLRenderer( parameters ) {
 
 		}
 
+		if ( material.sphericalHarmonics ) {
+
+			uniforms.sh0.value.fromArray( material.sphericalHarmonics, 0 );
+			uniforms.sh1.value.fromArray( material.sphericalHarmonics, 3 );
+			uniforms.sh2.value.fromArray( material.sphericalHarmonics, 6 );
+			uniforms.sh3.value.fromArray( material.sphericalHarmonics, 9 );
+			uniforms.sh4.value.fromArray( material.sphericalHarmonics, 12 );
+			uniforms.sh5.value.fromArray( material.sphericalHarmonics, 15 );
+			uniforms.sh6.value.fromArray( material.sphericalHarmonics, 18 );
+			uniforms.sh7.value.fromArray( material.sphericalHarmonics, 21 );
+			uniforms.sh8.value.fromArray( material.sphericalHarmonics, 24 );
+
+		}
+
 	}
 
 	function refreshUniformsPhysical( uniforms, material ) {

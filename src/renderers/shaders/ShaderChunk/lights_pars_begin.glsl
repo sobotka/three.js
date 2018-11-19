@@ -168,3 +168,24 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 	}
 
 #endif
+
+
+#if defined( SPHERICAL_HARMONICS )
+
+	uniform vec3 sh0;
+	uniform vec3 sh1;
+	uniform vec3 sh2;
+	uniform vec3 sh3;
+	uniform vec3 sh4;
+	uniform vec3 sh5;
+	uniform vec3 sh6;
+	uniform vec3 sh7;
+	uniform vec3 sh8;
+
+	vec3 getSphericalHarmonicsIrradiance( const in vec3 sh[ 9 ], const in GeometricContext geometry ) {
+
+		return sphericalHarmonicsToIrradiance( geometry.normal, sh );
+
+	}
+
+#endif

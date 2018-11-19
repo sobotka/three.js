@@ -113,6 +113,23 @@ IncidentLight directLight;
 
 	#endif
 
+	#if defined( SPHERICAL_HARMONICS )
+
+		vec3 sh[ 9 ];
+		sh[ 0 ] = sh0;
+		sh[ 1 ] = sh1;
+		sh[ 2 ] = sh2;
+		sh[ 3 ] = sh3;
+		sh[ 4 ] = sh4;
+		sh[ 5 ] = sh5;
+		sh[ 6 ] = sh6;
+		sh[ 7 ] = sh7;
+		sh[ 8 ] = sh8;
+
+		irradiance += getSphericalHarmonicsIrradiance( sh, geometry );
+
+	#endif
+
 #endif
 
 #if defined( RE_IndirectSpecular )
