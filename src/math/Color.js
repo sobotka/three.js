@@ -42,6 +42,8 @@ function Color( r, g, b ) {
 
 }
 
+Color.colorManagement = true;
+
 Object.assign( Color.prototype, {
 
 	isColor: true,
@@ -85,6 +87,12 @@ Object.assign( Color.prototype, {
 		this.r = ( hex >> 16 & 255 ) / 255;
 		this.g = ( hex >> 8 & 255 ) / 255;
 		this.b = ( hex & 255 ) / 255;
+
+		if ( Color.colorManagement === true ) {
+
+			this.convertSRGBToLinear();
+
+		}
 
 		return this;
 
@@ -135,6 +143,14 @@ Object.assign( Color.prototype, {
 
 			}
 
+			// HSL and HSV are typically computed directly from gamma-corrected
+			// R′, G′, and B′ in sRGB space, and therefore require conversion.
+			if ( Color.colorManagement === true ) {
+
+				this.convertSRGBToLinear();
+
+			}
+
 			return this;
 
 		};
@@ -180,6 +196,12 @@ Object.assign( Color.prototype, {
 
 						handleAlpha( color[ 5 ] );
 
+						if ( Color.colorManagement === true ) {
+
+							this.convertSRGBToLinear();
+
+						}
+
 						return this;
 
 					}
@@ -192,6 +214,12 @@ Object.assign( Color.prototype, {
 						this.b = Math.min( 100, parseInt( color[ 3 ], 10 ) ) / 100;
 
 						handleAlpha( color[ 5 ] );
+
+						if ( Color.colorManagement === true ) {
+
+							this.convertSRGBToLinear();
+
+						}
 
 						return this;
 
@@ -233,6 +261,12 @@ Object.assign( Color.prototype, {
 				this.g = parseInt( hex.charAt( 1 ) + hex.charAt( 1 ), 16 ) / 255;
 				this.b = parseInt( hex.charAt( 2 ) + hex.charAt( 2 ), 16 ) / 255;
 
+				if ( Color.colorManagement === true ) {
+
+					this.convertSRGBToLinear();
+
+				}
+
 				return this;
 
 			} else if ( size === 6 ) {
@@ -241,6 +275,12 @@ Object.assign( Color.prototype, {
 				this.r = parseInt( hex.charAt( 0 ) + hex.charAt( 1 ), 16 ) / 255;
 				this.g = parseInt( hex.charAt( 2 ) + hex.charAt( 3 ), 16 ) / 255;
 				this.b = parseInt( hex.charAt( 4 ) + hex.charAt( 5 ), 16 ) / 255;
+
+				if ( Color.colorManagement === true ) {
+
+					this.convertSRGBToLinear();
+
+				}
 
 				return this;
 
@@ -289,7 +329,7 @@ Object.assign( Color.prototype, {
 
 	copyGammaToLinear: function ( color, gammaFactor ) {
 
-		if ( gammaFactor === undefined ) gammaFactor = 2.0;
+		if ( gammaFactor === undefined ) gammaFactor = 2.2;
 
 		this.r = Math.pow( color.r, gammaFactor );
 		this.g = Math.pow( color.g, gammaFactor );
@@ -301,7 +341,7 @@ Object.assign( Color.prototype, {
 
 	copyLinearToGamma: function ( color, gammaFactor ) {
 
-		if ( gammaFactor === undefined ) gammaFactor = 2.0;
+		if ( gammaFactor === undefined ) gammaFactor = 2.2;
 
 		var safeInverse = ( gammaFactor > 0 ) ? ( 1.0 / gammaFactor ) : 1.0;
 
@@ -387,9 +427,25 @@ Object.assign( Color.prototype, {
 
 	getHex: function () {
 
-		return ( this.r * 255 ) << 16 ^ ( this.g * 255 ) << 8 ^ ( this.b * 255 ) << 0;
+		var color;
 
-	},
+		return function () {
+
+			color = color || new Color();
+
+			color.copy( this );
+
+			if ( Color.colorManagement === true ) {
+
+				color.convertLinearToSRGB();
+
+			}
+
+			return ( color.r * 255 ) << 16 ^ ( color.g * 255 ) << 8 ^ ( color.b * 255 ) << 0;
+
+		};
+
+	}(),
 
 	getHexString: function () {
 
@@ -399,59 +455,93 @@ Object.assign( Color.prototype, {
 
 	getHSL: function ( target ) {
 
-		// h,s,l ranges are in 0.0 - 1.0
+		var color;
 
-		if ( target === undefined ) {
+		return function () {
 
-			console.warn( 'THREE.Color: .getHSL() target is now required' );
-			target = { h: 0, s: 0, l: 0 };
+			color = color || new Color();
 
-		}
+			// h,s,l ranges are in 0.0 - 1.0
 
-		var r = this.r, g = this.g, b = this.b;
+			if ( target === undefined ) {
 
-		var max = Math.max( r, g, b );
-		var min = Math.min( r, g, b );
-
-		var hue, saturation;
-		var lightness = ( min + max ) / 2.0;
-
-		if ( min === max ) {
-
-			hue = 0;
-			saturation = 0;
-
-		} else {
-
-			var delta = max - min;
-
-			saturation = lightness <= 0.5 ? delta / ( max + min ) : delta / ( 2 - max - min );
-
-			switch ( max ) {
-
-				case r: hue = ( g - b ) / delta + ( g < b ? 6 : 0 ); break;
-				case g: hue = ( b - r ) / delta + 2; break;
-				case b: hue = ( r - g ) / delta + 4; break;
+				console.warn( 'THREE.Color: .getHSL() target is now required' );
+				target = { h: 0, s: 0, l: 0 };
 
 			}
 
-			hue /= 6;
+			color.copy( this );
 
-		}
+			// HSL and HSV are typically computed directly from gamma-corrected
+			// R′, G′, and B′ in sRGB space, and therefore require conversion.
+			if ( Color.colorManagement === true ) {
 
-		target.h = hue;
-		target.s = saturation;
-		target.l = lightness;
+				color.convertLinearToSRGB();
 
-		return target;
+			}
 
-	},
+			var r = color.r, g = color.g, b = color.b;
+
+			var max = Math.max( r, g, b );
+			var min = Math.min( r, g, b );
+
+			var hue, saturation;
+			var lightness = ( min + max ) / 2.0;
+
+			if ( min === max ) {
+
+				hue = 0;
+				saturation = 0;
+
+			} else {
+
+				var delta = max - min;
+
+				saturation = lightness <= 0.5 ? delta / ( max + min ) : delta / ( 2 - max - min );
+
+				switch ( max ) {
+
+					case r: hue = ( g - b ) / delta + ( g < b ? 6 : 0 ); break;
+					case g: hue = ( b - r ) / delta + 2; break;
+					case b: hue = ( r - g ) / delta + 4; break;
+
+				}
+
+				hue /= 6;
+
+			}
+
+			target.h = hue;
+			target.s = saturation;
+			target.l = lightness;
+
+			return target;
+
+		};
+
+	}(),
 
 	getStyle: function () {
 
-		return 'rgb(' + ( ( this.r * 255 ) | 0 ) + ',' + ( ( this.g * 255 ) | 0 ) + ',' + ( ( this.b * 255 ) | 0 ) + ')';
+		var color;
 
-	},
+		return function () {
+
+			color = color || new Color();
+
+			color.copy( this );
+
+			if ( Color.colorManagement === true ) {
+
+				color.convertLinearToSRGB();
+
+			}
+
+			return 'rgb(' + ( ( color.r * 255 ) | 0 ) + ',' + ( ( color.g * 255 ) | 0 ) + ',' + ( ( color.b * 255 ) | 0 ) + ')';
+
+		};
+
+	}(),
 
 	offsetHSL: function () {
 
@@ -601,6 +691,5 @@ Object.assign( Color.prototype, {
 	}
 
 } );
-
 
 export { Color };

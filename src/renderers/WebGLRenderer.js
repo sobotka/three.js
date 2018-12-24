@@ -12,6 +12,7 @@ import {
 } from '../constants.js';
 import { _Math } from '../math/Math.js';
 import { DataTexture } from '../textures/DataTexture.js';
+import { Color } from '../math/Color.js';
 import { Frustum } from '../math/Frustum.js';
 import { Matrix4 } from '../math/Matrix4.js';
 import { ShaderLib } from './shaders/ShaderLib.js';
@@ -94,9 +95,10 @@ function WebGLRenderer( parameters ) {
 
 	// physically based shading
 
-	this.gammaFactor = 2.0;	// for backwards compatibility
-	this.gammaInput = false;
-	this.gammaOutput = false;
+	this.colorManagement = true;
+
+	this.gammaFactor = 2.2;
+	this.gammaOutput = true;
 
 	// physical lights
 

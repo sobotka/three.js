@@ -52,7 +52,9 @@ var color = new THREE.Color( 1, 0, 0 );
 		[page:Float b] - (optional) If it is defined, the blue component of the color.<br /><br />
 
 		Note that standard method of specifying color in three.js is with a [link:https://en.wikipedia.org/wiki/Web_colors#Hex_triplet hexadecimal triplet], and that method is used
-		throughout the rest of the documentation.<br /><br />
+		throughout the rest of the documentation. This class is color-managed, and all hexadecimal and HSL inputs are assumed to be in sRGB color space. Component .r/.g/.b values are
+		linear, and treated as such throughout a linear rendering workflow. To learn more about linear rendering and sRGB, see
+		[link:https://blog.johnnovak.net/2016/09/21/what-every-coder-should-know-about-gamma/ What every coder should know about gamma].<br /><br />
 
 		When all arguments are defined then [page:Color_Hex_or_String r] is the red component, [page:Float g] is the green component and [page:Float b] is the blue component of the color.<br />
 		When only [page:Color_Hex_or_String r] is defined:<br />
@@ -123,13 +125,13 @@ var color = new THREE.Color( 1, 0, 0 );
 
 		<h3>[method:Color convertGammaToLinear]( [param:Float gammaFactor] ) </h3>
 		<p>
-		[page:Float gammaFactor] - (optional). Default is *2.0*.<br /><br />
+		[page:Float gammaFactor] - (optional). Default is *2.2*.<br /><br />
 		Converts this color from gamma space to linear space by taking [page:.r r], [page:.g g] and [page:.b b] to the power of [page:Float gammaFactor].
 		</p>
-		
+
 		<h3>[method:Color convertLinearToGamma]( [param:Float gammaFactor] ) </h3>
 		<p>
-		[page:Float gammaFactor] - (optional). Default is *2.0*.<br /><br />
+		[page:Float gammaFactor] - (optional). Default is *2.2*.<br /><br />
 		Converts this color from linear space to gamma space by taking [page:.r r], [page:.g g] and [page:.b b] to the power of 1 / [page:Float gammaFactor].
 		</p>
 
@@ -146,7 +148,7 @@ var color = new THREE.Color( 1, 0, 0 );
 		<h3>[method:Color copyGammaToLinear]( [param:Color color], [param:Float gammaFactor] ) </h3>
 		<p>
 		[page:Color color] — Color to copy.<br />
-		[page:Float gammaFactor] - (optional). Default is *2.0*.<br /><br />
+		[page:Float gammaFactor] - (optional). Default is *2.2*.<br /><br />
 
 		Copies the given color into this color, and then converts this color from gamma space to linear space
 		by taking [page:.r r], [page:.g g] and [page:.b b] to the power of [page:Float gammaFactor].
@@ -155,7 +157,7 @@ var color = new THREE.Color( 1, 0, 0 );
 		<h3>[method:Color copyLinearToGamma]( [param:Color color], [param:Float gammaFactor] ) </h3>
 		<p>
 		[page:Color color] — Color to copy.<br />
-		[page:Float gammaFactor] - (optional). Default is *2.0*.<br /><br />
+		[page:Float gammaFactor] - (optional). Default is *2.2*.<br /><br />
 
 		Copies the given color into this color, and then converts this color from linear space to gamma space
 		by taking [page:.r r], [page:.g g] and [page:.b b] to the power of 1 / [page:Float gammaFactor].

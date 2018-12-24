@@ -200,7 +200,8 @@
 
 		<h3>[property:number encoding]</h3>
 		<p>
-		[page:Textures THREE.LinearEncoding] is the default.
+		Default is undefined, and will resolve to [page:Textures THREE.sRGBEncoding] for
+		color textures or [page:Textures THREE.LinearEncoding] for other textures.
 		See the [page:Textures texture constants] page for details of other formats.<br /><br />
 
 		Note that if this value is changed on a texture after the material has been used,
