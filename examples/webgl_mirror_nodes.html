@@ -111,9 +111,9 @@
 
 				var normalMap = new THREE.TextureNode( decalNormal );
 				var normalXY = new THREE.SwitchNode( normalMap, 'xy' );
-				var normalXYFlip = new THREE.MathUtils1Node(
+				var normalXYFlip = new THREE.Math1Node(
 					normalXY,
-					THREE.MathUtils1Node.INVERT
+					THREE.Math1Node.INVERT
 				);
 
 				var offsetNormal = new THREE.OperatorNode(
