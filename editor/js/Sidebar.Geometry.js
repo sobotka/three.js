@@ -102,7 +102,7 @@ Sidebar.Geometry = function ( editor ) {
 	var geometryUUID = new UI.Input().setWidth( '102px' ).setFontSize( '12px' ).setDisabled( true );
 	var geometryUUIDRenew = new UI.Button( strings.getKey( 'sidebar/geometry/new' ) ).setMarginLeft( '7px' ).onClick( function () {
 
-		geometryUUID.setValue( THREE.Math.generateUUID() );
+		geometryUUID.setValue( THREE.MathUtils.generateUUID() );
 
 		editor.execute( new SetGeometryValueCommand( editor.selected, 'uuid', geometryUUID.getValue() ) );
 

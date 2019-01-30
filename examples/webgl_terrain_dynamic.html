@@ -469,21 +469,21 @@
 
 					var fLow = 0.1, fHigh = 0.8;
 
-					lightVal = THREE.Math.clamp( lightVal + 0.5 * delta * lightDir, fLow, fHigh );
+					lightVal = THREE.MathUtils.clamp( lightVal + 0.5 * delta * lightDir, fLow, fHigh );
 
 					var valNorm = ( lightVal - fLow ) / ( fHigh - fLow );
 
 					scene.background.setHSL( 0.1, 0.5, lightVal );
 					scene.fog.color.setHSL( 0.1, 0.5, lightVal );
 
-					directionalLight.intensity = THREE.Math.mapLinear( valNorm, 0, 1, 0.1, 1.15 );
-					pointLight.intensity = THREE.Math.mapLinear( valNorm, 0, 1, 0.9, 1.5 );
+					directionalLight.intensity = THREE.MathUtils.mapLinear( valNorm, 0, 1, 0.1, 1.15 );
+					pointLight.intensity = THREE.MathUtils.mapLinear( valNorm, 0, 1, 0.9, 1.5 );
 
-					uniformsTerrain[ 'uNormalScale' ].value = THREE.Math.mapLinear( valNorm, 0, 1, 0.6, 3.5 );
+					uniformsTerrain[ 'uNormalScale' ].value = THREE.MathUtils.mapLinear( valNorm, 0, 1, 0.6, 3.5 );
 
 					if ( updateNoise ) {
 
-						animDelta = THREE.Math.clamp( animDelta + 0.00075 * animDeltaDir, 0, 0.05 );
+						animDelta = THREE.MathUtils.clamp( animDelta + 0.00075 * animDeltaDir, 0, 0.05 );
 						uniformsNoise[ 'time' ].value += delta * animDelta;
 
 						uniformsNoise[ 'offset' ].value.x += delta * 0.05;

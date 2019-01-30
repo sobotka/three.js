@@ -55,7 +55,7 @@ import { Box2 } from './math/Box2.js';
 import { Box3 } from './math/Box3.js';
 import { Color } from './math/Color.js';
 import { Line3 } from './math/Line3.js';
-import { _Math } from './math/Math.js';
+import { MathUtils } from './math/MathUtils.js';
 import { Matrix3 } from './math/Matrix3.js';
 import { Matrix4 } from './math/Matrix4.js';
 import { Plane } from './math/Plane.js';
@@ -519,26 +519,26 @@ Line3.prototype.center = function ( optionalTarget ) {
 
 };
 
-Object.assign( _Math, {
+Object.assign( MathUtils, {
 
 	random16: function () {
 
-		console.warn( 'THREE.Math: .random16() has been deprecated. Use Math.random() instead.' );
+		console.warn( 'THREE.MathUtils: .random16() has been deprecated. Use Math.random() instead.' );
 		return Math.random();
 
 	},
 
 	nearestPowerOfTwo: function ( value ) {
 
-		console.warn( 'THREE.Math: .nearestPowerOfTwo() has been renamed to .floorPowerOfTwo().' );
-		return _Math.floorPowerOfTwo( value );
+		console.warn( 'THREE.MathUtils: .nearestPowerOfTwo() has been renamed to .floorPowerOfTwo().' );
+		return MathUtils.floorPowerOfTwo( value );
 
 	},
 
 	nextPowerOfTwo: function ( value ) {
 
-		console.warn( 'THREE.Math: .nextPowerOfTwo() has been renamed to .ceilPowerOfTwo().' );
-		return _Math.ceilPowerOfTwo( value );
+		console.warn( 'THREE.MathUtils: .nextPowerOfTwo() has been renamed to .ceilPowerOfTwo().' );
+		return MathUtils.ceilPowerOfTwo( value );
 
 	}
 

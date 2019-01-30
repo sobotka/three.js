@@ -1,5 +1,5 @@
 import { Matrix4 } from '../math/Matrix4.js';
-import { _Math } from '../math/Math.js';
+import { MathUtils } from '../math/MathUtils.js';
 import { PerspectiveCamera } from './PerspectiveCamera.js';
 
 /**
@@ -55,7 +55,7 @@ Object.assign( StereoCamera.prototype, {
 				var projectionMatrix = camera.projectionMatrix.clone();
 				eyeSep = this.eyeSep / 2;
 				var eyeSepOnProjection = eyeSep * near / focus;
-				var ymax = ( near * Math.tan( _Math.DEG2RAD * fov * 0.5 ) ) / zoom;
+				var ymax = ( near * Math.tan( MathUtils.DEG2RAD * fov * 0.5 ) ) / zoom;
 				var xmin, xmax;
 
 				// translate xOffset

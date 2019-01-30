@@ -174,7 +174,7 @@ THREE.SEA3D.prototype.flipBoneMatrix = function () {
 		pos.z = - pos.z;
 
 		mtx.setPosition( zero );
-		mtx.multiplyMatrices( THREE.SEA3D.MTXBUF.makeRotationZ( THREE.Math.degToRad( 180 ) ), mtx );
+		mtx.multiplyMatrices( THREE.SEA3D.MTXBUF.makeRotationZ( THREE.MathUtils.degToRad( 180 ) ), mtx );
 		mtx.setPosition( pos );
 
 		return mtx;
@@ -201,7 +201,7 @@ THREE.SEA3D.prototype.flipScaleMatrix = function () {
 
 		if ( rotate ) {
 
-			local.multiplyMatrices( local, THREE.SEA3D.MTXBUF.makeRotationZ( THREE.Math.degToRad( 180 ) ) );
+			local.multiplyMatrices( local, THREE.SEA3D.MTXBUF.makeRotationZ( THREE.MathUtils.degToRad( 180 ) ) );
 
 		}
 

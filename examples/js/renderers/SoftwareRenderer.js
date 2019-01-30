@@ -1531,7 +1531,7 @@ THREE.SoftwareRenderer.Texture = function () {
 		}
 
 		var size = image.width > image.height ? image.width : image.height;
-		size = THREE.Math.ceilPowerOfTwo( size );
+		size = THREE.MathUtils.ceilPowerOfTwo( size );
 
 		if ( canvas.width != size || canvas.height != size ) {
 

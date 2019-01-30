@@ -36,7 +36,7 @@ Sidebar.Geometry.CircleGeometry = function ( editor, object ) {
 	// thetaStart
 
 	var thetaStartRow = new UI.Row();
-	var thetaStart = new UI.Number( parameters.thetaStart * THREE.Math.RAD2DEG ).setStep( 10 ).onChange( update );
+	var thetaStart = new UI.Number( parameters.thetaStart * THREE.MathUtils.RAD2DEG ).setStep( 10 ).onChange( update );
 
 	thetaStartRow.add( new UI.Text( strings.getKey( 'sidebar/geometry/circle_geometry/thetastart' ) ).setWidth( '90px' ) );
 	thetaStartRow.add( thetaStart );
@@ -46,7 +46,7 @@ Sidebar.Geometry.CircleGeometry = function ( editor, object ) {
 	// thetaLength
 
 	var thetaLengthRow = new UI.Row();
-	var thetaLength = new UI.Number( parameters.thetaLength * THREE.Math.RAD2DEG ).setStep( 10 ).onChange( update );
+	var thetaLength = new UI.Number( parameters.thetaLength * THREE.MathUtils.RAD2DEG ).setStep( 10 ).onChange( update );
 
 	thetaLengthRow.add( new UI.Text( strings.getKey( 'sidebar/geometry/circle_geometry/thetalength' ) ).setWidth( '90px' ) );
 	thetaLengthRow.add( thetaLength );
@@ -60,8 +60,8 @@ Sidebar.Geometry.CircleGeometry = function ( editor, object ) {
 		editor.execute( new SetGeometryCommand( object, new THREE[ geometry.type ](
 			radius.getValue(),
 			segments.getValue(),
-			thetaStart.getValue() * THREE.Math.DEG2RAD,
-			thetaLength.getValue() * THREE.Math.DEG2RAD
+			thetaStart.getValue() * THREE.MathUtils.DEG2RAD,
+			thetaLength.getValue() * THREE.MathUtils.DEG2RAD
 		) ) );
 
 	}

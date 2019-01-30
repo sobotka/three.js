@@ -102,7 +102,7 @@ Sidebar.Material = function ( editor ) {
 	var materialUUID = new UI.Input().setWidth( '102px' ).setFontSize( '12px' ).setDisabled( true );
 	var materialUUIDRenew = new UI.Button( strings.getKey( 'sidebar/material/new' ) ).setMarginLeft( '7px' ).onClick( function () {
 
-		materialUUID.setValue( THREE.Math.generateUUID() );
+		materialUUID.setValue( THREE.MathUtils.generateUUID() );
 		update();
 
 	} );

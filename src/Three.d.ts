@@ -110,7 +110,7 @@ export { DiscreteInterpolant } from './math/interpolants/DiscreteInterpolant';
 export { CubicInterpolant } from './math/interpolants/CubicInterpolant';
 export { Interpolant } from './math/Interpolant';
 export { Triangle } from './math/Triangle';
-export { _Math as Math } from './math/Math';
+export { MathUtils } from './math/MathUtils';
 export { Spherical } from './math/Spherical';
 export { Cylindrical } from './math/Cylindrical';
 export { Plane } from './math/Plane';

@@ -210,7 +210,7 @@ THREE.GLTFExporter.prototype = {
 		 */
 		function isPowerOfTwo( image ) {
 
-			return THREE.Math.isPowerOfTwo( image.width ) && THREE.Math.isPowerOfTwo( image.height );
+			return THREE.MathUtils.isPowerOfTwo( image.width ) && THREE.MathUtils.isPowerOfTwo( image.height );
 
 		}
 
@@ -714,8 +714,8 @@ THREE.GLTFExporter.prototype = {
 
 					console.warn( 'GLTFExporter: Resized non-power-of-two image.', image );
 
-					canvas.width = THREE.Math.floorPowerOfTwo( canvas.width );
-					canvas.height = THREE.Math.floorPowerOfTwo( canvas.height );
+					canvas.width = THREE.MathUtils.floorPowerOfTwo( canvas.width );
+					canvas.height = THREE.MathUtils.floorPowerOfTwo( canvas.height );
 
 				}
 
@@ -1408,7 +1408,7 @@ THREE.GLTFExporter.prototype = {
 				gltfCamera.perspective = {
 
 					aspectRatio: camera.aspect,
-					yfov: THREE.Math.degToRad( camera.fov ) / camera.aspect,
+					yfov: THREE.MathUtils.degToRad( camera.fov ) / camera.aspect,
 					zfar: camera.far <= 0 ? 0.001 : camera.far,
 					znear: camera.near < 0 ? 0 : camera.near
 

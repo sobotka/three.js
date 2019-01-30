@@ -195,7 +195,7 @@
 				THREE.OperatorNode.MUL
 			);
 
-			var cycle = new THREE.Math1Node( sinCycleInSecs, THREE.Math1Node.SIN );
+			var cycle = new THREE.MathUtils1Node( sinCycleInSecs, THREE.MathUtils1Node.SIN );
 
 			var cycleColor = new THREE.OperatorNode(
 				cycle,
@@ -203,7 +203,7 @@
 				THREE.OperatorNode.MUL
 			);
 
-			var cos = new THREE.Math1Node( cycleColor, THREE.Math1Node.SIN );
+			var cos = new THREE.MathUtils1Node( cycleColor, THREE.MathUtils1Node.SIN );
 
 			mtl.color = new THREE.ColorNode( 0 );
 			mtl.emissive = cos;

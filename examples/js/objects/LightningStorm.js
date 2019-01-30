@@ -3,53 +3,53 @@
  *
  * @fileoverview Lightning strike object generator
  *
- * 
+ *
  * Usage
- * 
+ *
  * var myStorm = new THREE.LightningStorm( paramsObject );
  * myStorm.position.set( ... );
  * scene.add( myStorm );
  * ...
  * myStorm.update( currentTime );
- * 
+ *
  * The "currentTime" can only go forwards or be stopped.
- * 
- * 
+ *
+ *
  * LightningStorm parameters:
  *
  * @param {double} size Size of the storm. If no 'onRayPosition' parameter is defined, it means the side of the rectangle the storm covers.
  *
  * @param {double} minHeight Minimum height a ray can start at. If no 'onRayPosition' parameter is defined, it means the height above plane y = 0.
- * 
+ *
  * @param {double} maxHeight Maximum height a ray can start at. If no 'onRayPosition' parameter is defined, it means the height above plane y = 0.
- * 
+ *
  * @param {double} maxSlope The maximum inclination slope of a ray. If no 'onRayPosition' parameter is defined, it means the slope relative to plane y = 0.
- * 
+ *
  * @param {integer} maxLightnings Greater than 0. The maximum number of simultaneous rays.
- * 
+ *
  * @param {double} lightningMinPeriod minimum time between two consecutive rays.
- * 
+ *
  * @param {double} lightningMaxPeriod maximum time between two consecutive rays.
- * 
+ *
  * @param {double} lightningMinDuration The minimum time a ray can last.
- * 
+ *
  * @param {double} lightningMaxDuration The maximum time a ray can last.
- * 
+ *
  * @param {Object} lightningParameters The parameters for created rays. See THREE.LightningStrike (geometry)
- * 
+ *
  * @param {Material} lightningMaterial The THREE.Material used for the created rays.
- * 
+ *
  * @param {function} onRayPosition Optional callback with two Vector3 parameters (source, dest). You can set here the start and end points for each created ray, using the standard size, minHeight, etc parameters and other values in your algorithm.
- * 
+ *
  * @param {function} onLightningDown This optional callback is called with one parameter (lightningStrike) when a ray ends propagating, so it has hit the ground.
- * 
+ *
  *
 */
 
 THREE.LightningStorm = function ( stormParams ) {
 
 	THREE.Object3D.call( this );
-	
+
 	// Parameters
 
 	stormParams = stormParams || {};
@@ -71,7 +71,7 @@ THREE.LightningStorm = function ( stormParams ) {
 	this.lightningParameters = THREE.LightningStrike.copyParameters( stormParams.lightningParameters, stormParams.lightningParameters );
 
 	this.lightningParameters.isEternal = false;
-	
+
 	this.lightningMaterial = stormParams.lightningMaterial !== undefined ? stormParams.lightningMaterial : new THREE.MeshBasicMaterial( { color: 0xB0FFFF } );
 
 	if ( stormParams.onRayPosition !== undefined ) {
@@ -84,8 +84,8 @@ THREE.LightningStorm = function ( stormParams ) {
 		this.onRayPosition = function( source, dest ) {
 
 			dest.set( ( Math.random() - 0.5 ) * stormParams.size, 0, ( Math.random() - 0.5 ) * stormParams.size );
-			
-			var height = THREE.Math.lerp( stormParams.minHeight, stormParams.maxHeight, Math.random() );;
+
+			var height = THREE.MathUtils.lerp( stormParams.minHeight, stormParams.maxHeight, Math.random() );;
 
 			source.set( stormParams.maxSlope * ( 2 * Math.random() - 1 ), 1, stormParams.maxSlope * ( 2 * Math.random() - 1 ) ).multiplyScalar( height ).add( dest );
 
@@ -138,7 +138,7 @@ THREE.LightningStorm.prototype.update = function ( time ) {
 			var lightningParams1 = THREE.LightningStrike.copyParameters( lightningMesh.geometry.rayParameters, this.lightningParameters );
 
 			lightningParams1.birthTime = time;
-			lightningParams1.deathTime = time + THREE.Math.lerp( this.stormParams.lightningMinDuration, this.stormParams.lightningMaxDuration, Math.random() );
+			lightningParams1.deathTime = time + THREE.MathUtils.lerp( this.stormParams.lightningMinDuration, this.stormParams.lightningMaxDuration, Math.random() );
 
 			this.onRayPosition( lightningParams1.sourceOffset, lightningParams1.destOffset );
 
@@ -181,7 +181,7 @@ THREE.LightningStorm.prototype.update = function ( time ) {
 
 			// Lightning is to be destroyed
 
-			this.lightningsMeshes.splice( this.lightningsMeshes.indexOf( mesh ), 1 ); 
+			this.lightningsMeshes.splice( this.lightningsMeshes.indexOf( mesh ), 1 );
 
 			this.deadLightningsMeshes.push( mesh );
 
@@ -202,12 +202,12 @@ THREE.LightningStorm.prototype.update = function ( time ) {
 
 THREE.LightningStorm.prototype.getNextLightningTime = function ( currentTime ) {
 
-	return currentTime + THREE.Math.lerp( this.stormParams.lightningMinPeriod, this.stormParams.lightningMaxPeriod, Math.random() ) / ( this.stormParams.maxLightnings + 1 );
+	return currentTime + THREE.MathUtils.lerp( this.stormParams.lightningMinPeriod, this.stormParams.lightningMaxPeriod, Math.random() ) / ( this.stormParams.maxLightnings + 1 );
 
 };
 
 THREE.LightningStorm.prototype.copy = function ( source ) {
-	
+
 	Object3D.prototype.copy.call( this, source );
 
 	this.stormParams.size = source.stormParams.size;

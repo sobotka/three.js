@@ -15,8 +15,8 @@ QUnit.test( "Test SetGeometryValueCommand (Undo and Redo)", function( assert ) {
 	editor.execute( cmd );
 
 	var testData = [
-		{ uuid: THREE.Math.generateUUID(), name: 'Bruno' },
-		{ uuid: THREE.Math.generateUUID(), name: 'Jack' }
+		{ uuid: THREE.MathUtils.generateUUID(), name: 'Bruno' },
+		{ uuid: THREE.MathUtils.generateUUID(), name: 'Jack' }
 	];
 
 	for ( var i = 0; i < testData.length; i ++ ) {

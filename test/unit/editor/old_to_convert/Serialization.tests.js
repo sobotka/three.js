@@ -124,7 +124,7 @@ QUnit.test( "Test Serialization", function( assert ) {
 		var box = aBox( 'Geometry Value Box' );
 		editor.execute( new AddObjectCommand( box ) );
 
-		cmd = new SetGeometryValueCommand( box, 'uuid', THREE.Math.generateUUID() );
+		cmd = new SetGeometryValueCommand( box, 'uuid', THREE.MathUtils.generateUUID() );
 		cmd.updatable = false;
 		editor.execute( cmd );
 
@@ -256,7 +256,7 @@ QUnit.test( "Test Serialization", function( assert ) {
 		var sphere = aSphere( 'Sphere with UUID' );
 		editor.execute( new AddObjectCommand( sphere ) );
 
-		var cmd = new SetUuidCommand( sphere, THREE.Math.generateUUID() );
+		var cmd = new SetUuidCommand( sphere, THREE.MathUtils.generateUUID() );
 		cmd.updatable = false;
 		editor.execute( cmd );
 

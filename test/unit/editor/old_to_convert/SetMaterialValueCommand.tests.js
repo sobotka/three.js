@@ -17,7 +17,7 @@ QUnit.test( "Test for SetMaterialValueCommand (Undo and Redo)", function( assert
 	// every attribute gets three test values
 	var testData = {
 
-		uuid: [ THREE.Math.generateUUID(), THREE.Math.generateUUID(), THREE.Math.generateUUID() ],
+		uuid: [ THREE.MathUtils.generateUUID(), THREE.MathUtils.generateUUID(), THREE.MathUtils.generateUUID() ],
 		name: [ 'Alpha', 'Bravo', 'Charlie' ],
 		shininess: [ 11.1, 22.2, 33.3 ],
 		vertexColors: [ 'No', 'Face', 'Vertex' ],

@@ -163,9 +163,9 @@ THREE.ResolutionNode = ResolutionNode;
 
 // math
 
-THREE.Math1Node = Math1Node;
-THREE.Math2Node = Math2Node;
-THREE.Math3Node = Math3Node;
+THREE.MathUtils1Node = Math1Node;
+THREE.MathUtils2Node = Math2Node;
+THREE.MathUtils3Node = Math3Node;
 THREE.OperatorNode = OperatorNode;
 THREE.CondNode = CondNode;
 

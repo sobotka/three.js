@@ -1,4 +1,4 @@
-import { _Math } from './Math.js';
+import { MathUtils } from './MathUtils.js';
 import { Matrix4 } from './Matrix4.js';
 import { Quaternion } from './Quaternion.js';
 
@@ -591,7 +591,7 @@ Object.assign( Vector3.prototype, {
 
 		// clamp, to handle numerical problems
 
-		return Math.acos( _Math.clamp( theta, - 1, 1 ) );
+		return Math.acos( MathUtils.clamp( theta, - 1, 1 ) );
 
 	},
 

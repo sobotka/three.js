@@ -29,7 +29,7 @@ TempNode.prototype.build = function ( builder, output, uuid, ns ) {
 
 		if ( isUnique && this.constructor.uuid === undefined ) {
 
-			this.constructor.uuid = THREE.Math.generateUUID();
+			this.constructor.uuid = THREE.MathUtils.generateUUID();
 
 		}
 

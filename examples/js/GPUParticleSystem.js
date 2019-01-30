@@ -354,9 +354,9 @@ THREE.GPUParticleContainer = function ( maxParticles, particleSystem ) {
 		var velY = velocity.y + particleSystem.random() * velocityRandomness;
 		var velZ = velocity.z + particleSystem.random() * velocityRandomness;
 
-		velX = THREE.Math.clamp( ( velX - ( - maxVel ) ) / ( maxVel - ( - maxVel ) ), 0, 1 );
-		velY = THREE.Math.clamp( ( velY - ( - maxVel ) ) / ( maxVel - ( - maxVel ) ), 0, 1 );
-		velZ = THREE.Math.clamp( ( velZ - ( - maxVel ) ) / ( maxVel - ( - maxVel ) ), 0, 1 );
+		velX = THREE.MathUtils.clamp( ( velX - ( - maxVel ) ) / ( maxVel - ( - maxVel ) ), 0, 1 );
+		velY = THREE.MathUtils.clamp( ( velY - ( - maxVel ) ) / ( maxVel - ( - maxVel ) ), 0, 1 );
+		velZ = THREE.MathUtils.clamp( ( velZ - ( - maxVel ) ) / ( maxVel - ( - maxVel ) ), 0, 1 );
 
 		velocityAttribute.array[ i * 3 + 0 ] = velX;
 		velocityAttribute.array[ i * 3 + 1 ] = velY;
@@ -364,9 +364,9 @@ THREE.GPUParticleContainer = function ( maxParticles, particleSystem ) {
 
 		// color
 
-		color.r = THREE.Math.clamp( color.r + particleSystem.random() * colorRandomness, 0, 1 );
-		color.g = THREE.Math.clamp( color.g + particleSystem.random() * colorRandomness, 0, 1 );
-		color.b = THREE.Math.clamp( color.b + particleSystem.random() * colorRandomness, 0, 1 );
+		color.r = THREE.MathUtils.clamp( color.r + particleSystem.random() * colorRandomness, 0, 1 );
+		color.g = THREE.MathUtils.clamp( color.g + particleSystem.random() * colorRandomness, 0, 1 );
+		color.b = THREE.MathUtils.clamp( color.b + particleSystem.random() * colorRandomness, 0, 1 );
 
 		colorAttribute.array[ i * 3 + 0 ] = color.r;
 		colorAttribute.array[ i * 3 + 1 ] = color.g;

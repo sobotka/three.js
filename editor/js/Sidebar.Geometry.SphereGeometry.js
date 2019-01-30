@@ -46,7 +46,7 @@ Sidebar.Geometry.SphereGeometry = function ( editor, object ) {
 	// phiStart
 
 	var phiStartRow = new UI.Row();
-	var phiStart = new UI.Number( parameters.phiStart * THREE.Math.RAD2DEG ).setStep( 10 ).onChange( update );
+	var phiStart = new UI.Number( parameters.phiStart * THREE.MathUtils.RAD2DEG ).setStep( 10 ).onChange( update );
 
 	phiStartRow.add( new UI.Text( strings.getKey( 'sidebar/geometry/sphere_geometry/phistart' ) ).setWidth( '90px' ) );
 	phiStartRow.add( phiStart );
@@ -56,7 +56,7 @@ Sidebar.Geometry.SphereGeometry = function ( editor, object ) {
 	// phiLength
 
 	var phiLengthRow = new UI.Row();
-	var phiLength = new UI.Number( parameters.phiLength * THREE.Math.RAD2DEG ).setStep( 10 ).onChange( update );
+	var phiLength = new UI.Number( parameters.phiLength * THREE.MathUtils.RAD2DEG ).setStep( 10 ).onChange( update );
 
 	phiLengthRow.add( new UI.Text( strings.getKey( 'sidebar/geometry/sphere_geometry/philength' ) ).setWidth( '90px' ) );
 	phiLengthRow.add( phiLength );
@@ -66,7 +66,7 @@ Sidebar.Geometry.SphereGeometry = function ( editor, object ) {
 	// thetaStart
 
 	var thetaStartRow = new UI.Row();
-	var thetaStart = new UI.Number( parameters.thetaStart * THREE.Math.RAD2DEG ).setStep( 10 ).onChange( update );
+	var thetaStart = new UI.Number( parameters.thetaStart * THREE.MathUtils.RAD2DEG ).setStep( 10 ).onChange( update );
 
 	thetaStartRow.add( new UI.Text( strings.getKey( 'sidebar/geometry/sphere_geometry/thetastart' ) ).setWidth( '90px' ) );
 	thetaStartRow.add( thetaStart );
@@ -76,7 +76,7 @@ Sidebar.Geometry.SphereGeometry = function ( editor, object ) {
 	// thetaLength
 
 	var thetaLengthRow = new UI.Row();
-	var thetaLength = new UI.Number( parameters.thetaLength * THREE.Math.RAD2DEG ).setStep( 10 ).onChange( update );
+	var thetaLength = new UI.Number( parameters.thetaLength * THREE.MathUtils.RAD2DEG ).setStep( 10 ).onChange( update );
 
 	thetaLengthRow.add( new UI.Text( strings.getKey( 'sidebar/geometry/sphere_geometry/thetalength' ) ).setWidth( '90px' ) );
 	thetaLengthRow.add( thetaLength );
@@ -92,10 +92,10 @@ Sidebar.Geometry.SphereGeometry = function ( editor, object ) {
 			radius.getValue(),
 			widthSegments.getValue(),
 			heightSegments.getValue(),
-			phiStart.getValue() * THREE.Math.DEG2RAD,
-			phiLength.getValue() * THREE.Math.DEG2RAD,
-			thetaStart.getValue() * THREE.Math.DEG2RAD,
-			thetaLength.getValue() * THREE.Math.DEG2RAD
+			phiStart.getValue() * THREE.MathUtils.DEG2RAD,
+			phiLength.getValue() * THREE.MathUtils.DEG2RAD,
+			thetaStart.getValue() * THREE.MathUtils.DEG2RAD,
+			thetaLength.getValue() * THREE.MathUtils.DEG2RAD
 		) ) );
 
 	}

@@ -51,7 +51,7 @@
 
 		<script src="js/loaders/BVHLoader.js"></script>
 		<script src="js/utils/SkeletonUtils.js"></script>
-		
+
 		<script src="js/WebGL.js"></script>
 		<script src="js/libs/stats.min.js"></script>
 
@@ -157,28 +157,28 @@
 					"lShldr": new THREE.Matrix4().makeRotationFromEuler(
 						new THREE.Euler(
 							0,
-							THREE.Math.degToRad( - 45 ),
-							THREE.Math.degToRad( - 80 )
+							THREE.MathUtils.degToRad( - 45 ),
+							THREE.MathUtils.degToRad( - 80 )
 						)
 					),
 					"rShldr": new THREE.Matrix4().makeRotationFromEuler(
 						new THREE.Euler(
 							0,
-							THREE.Math.degToRad( 45 ),
-							THREE.Math.degToRad( 80 )
+							THREE.MathUtils.degToRad( 45 ),
+							THREE.MathUtils.degToRad( 80 )
 						)
 					),
 					"lFoot": new THREE.Matrix4().makeRotationFromEuler(
 						new THREE.Euler(
 							0,
-							THREE.Math.degToRad( 15 ),
+							THREE.MathUtils.degToRad( 15 ),
 							0
 						)
 					),
 					"rFoot": new THREE.Matrix4().makeRotationFromEuler(
 						new THREE.Euler(
 							0,
-							THREE.Math.degToRad( 15 ),
+							THREE.MathUtils.degToRad( 15 ),
 							0
 						)
 					)

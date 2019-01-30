@@ -12,7 +12,7 @@ QUnit.test( "Test SetUuidCommand (Undo and Redo)", function( assert ) {
 	editor.execute( new AddObjectCommand( object ) );
 
 
-	var uuids = [ THREE.Math.generateUUID(), THREE.Math.generateUUID(), THREE.Math.generateUUID() ];
+	var uuids = [ THREE.MathUtils.generateUUID(), THREE.MathUtils.generateUUID(), THREE.MathUtils.generateUUID() ];
 
 	uuids.map( function( uuid ) {
 

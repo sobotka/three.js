@@ -1619,7 +1619,7 @@ THREE.SEA3D.AnimationHandler = {
 
 THREE.SEA3D.Sound = function ( src ) {
 
-	this.uuid = THREE.Math.generateUUID();
+	this.uuid = THREE.MathUtils.generateUUID();
 
 	this.src = src;
 

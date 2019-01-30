@@ -4,7 +4,7 @@
 
 function Node( type ) {
 
-	this.uuid = THREE.Math.generateUUID();
+	this.uuid = THREE.MathUtils.generateUUID();
 
 	this.name = "";
 

@@ -120,7 +120,7 @@ var AnimationUtils = {
 
 		} else if ( value.toArray !== undefined ) {
 
-			// ...assume THREE.Math-ish
+			// ...assume THREE.MathUtils-ish
 
 			do {
 

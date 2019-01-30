@@ -10,7 +10,7 @@ function NodePass() {
 	THREE.ShaderPass.call( this );
 
 	this.name = "";
-	this.uuid = THREE.Math.generateUUID();
+	this.uuid = THREE.MathUtils.generateUUID();
 
 	this.userData = {};
 

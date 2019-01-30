@@ -15,7 +15,7 @@ import {
 	MirroredRepeatWrapping,
 	RepeatWrapping
 } from '../constants.js';
-import { _Math } from '../math/Math.js';
+import { MathUtils } from '../math/MathUtils.js';
 import { MaterialLoader } from './MaterialLoader.js';
 import { TextureLoader } from './TextureLoader.js';
 import { Color } from '../math/Color.js';
@@ -153,7 +153,7 @@ Object.assign( Loader.prototype, {
 
 				}
 
-				var uuid = _Math.generateUUID();
+				var uuid = MathUtils.generateUUID();
 
 				textures[ uuid ] = texture;
 
@@ -164,7 +164,7 @@ Object.assign( Loader.prototype, {
 			//
 
 			var json = {
-				uuid: _Math.generateUUID(),
+				uuid: MathUtils.generateUUID(),
 				type: 'MeshLambertMaterial'
 			};
 

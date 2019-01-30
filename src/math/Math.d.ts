@@ -1,8 +1,8 @@
 /**
  *
- * @see <a href="https://github.com/mrdoob/three.js/blob/master/src/math/Math.js">src/math/Math.js</a>
+ * @see <a href="https://github.com/mrdoob/three.js/blob/master/src/math/MathUtils.js">src/math/MathUtils.js</a>
  */
-export namespace _Math {
+export namespace MathUtils {
   export const DEG2RAD: number;
   export const RAD2DEG: number;
 

@@ -9,7 +9,7 @@ import { Vector3 } from '../../../../src/math/Vector3';
 import { Euler } from '../../../../src/math/Euler';
 import { Quaternion } from '../../../../src/math/Quaternion';
 import { Float32BufferAttribute } from '../../../../src/core/BufferAttribute';
-import { _Math } from '../../../../src/math/Math';
+import { MathUtils } from '../../../../src/math/Math';
 import { eps } from './Constants.tests';
 
 
@@ -542,7 +542,7 @@ export default QUnit.module( 'Maths', () => {
 		QUnit.test( "makeRotationAxis", ( assert ) => {
 
 			var axis = new Vector3( 1.5, 0.0, 1.0 ).normalize();
-			var radians = _Math.degToRad( 45 );
+			var radians = MathUtils.degToRad( 45 );
 			var a = new Matrix4().makeRotationAxis( axis, radians );
 
 			var expected = new Matrix4().set(
