@@ -327,48 +327,6 @@ Object.assign( Color.prototype, {
 
 	},
 
-	copyGammaToLinear: function ( color, gammaFactor ) {
-
-		if ( gammaFactor === undefined ) gammaFactor = 2.2;
-
-		this.r = Math.pow( color.r, gammaFactor );
-		this.g = Math.pow( color.g, gammaFactor );
-		this.b = Math.pow( color.b, gammaFactor );
-
-		return this;
-
-	},
-
-	copyLinearToGamma: function ( color, gammaFactor ) {
-
-		if ( gammaFactor === undefined ) gammaFactor = 2.2;
-
-		var safeInverse = ( gammaFactor > 0 ) ? ( 1.0 / gammaFactor ) : 1.0;
-
-		this.r = Math.pow( color.r, safeInverse );
-		this.g = Math.pow( color.g, safeInverse );
-		this.b = Math.pow( color.b, safeInverse );
-
-		return this;
-
-	},
-
-	convertGammaToLinear: function ( gammaFactor ) {
-
-		this.copyGammaToLinear( this, gammaFactor );
-
-		return this;
-
-	},
-
-	convertLinearToGamma: function ( gammaFactor ) {
-
-		this.copyLinearToGamma( this, gammaFactor );
-
-		return this;
-
-	},
-
 	copySRGBToLinear: function () {
 
 		function SRGBToLinear( c ) {

@@ -96,9 +96,7 @@ function WebGLRenderer( parameters ) {
 	// physically based shading
 
 	this.colorManagement = true;
-
-	this.gammaFactor = 2.2;
-	this.gammaOutput = true;
+	this.linearOutput = false;
 
 	// physical lights
 

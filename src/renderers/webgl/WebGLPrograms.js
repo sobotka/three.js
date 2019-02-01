@@ -134,8 +134,7 @@ function WebGLPrograms( renderer, extensions, capabilities ) {
 
 			precision: precision,
 			supportsVertexTextures: capabilities.vertexTextures,
-			// TODO: This doesn't seem correct...
-			outputEncoding: getTextureEncodingFromMap( ( ! currentRenderTarget ) ? null : currentRenderTarget.texture, renderer.gammaOutput ),
+			outputEncoding: getTextureEncodingFromMap( ( ! currentRenderTarget ) ? null : currentRenderTarget.texture, !renderer.linearOutput ),
 			map: !! material.map,
 			mapEncoding: getTextureEncodingFromMap( material.map, renderer.colorManagement ),
 			matcap: !! material.matcap,
@@ -247,8 +246,6 @@ function WebGLPrograms( renderer, extensions, capabilities ) {
 		array.push( material.onBeforeCompile.toString() );
 
 		array.push( renderer.gammaOutput );
-
-		array.push( renderer.gammaFactor );
 
 		return array.join();
 

@@ -335,11 +335,6 @@ export class WebGLRenderer implements Renderer {
   ): void;
 
   /**
-   * @deprecated
-   */
-  gammaFactor: number;
-
-  /**
    * @deprecated Use {@link WebGLShadowMap#enabled .shadowMap.enabled} instead.
    */
   shadowMapEnabled: boolean;

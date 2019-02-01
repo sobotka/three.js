@@ -283,8 +283,6 @@ function WebGLProgram( renderer, extensions, code, material, shader, parameters,
 
 	}
 
-	var gammaFactorDefine = ( renderer.gammaFactor > 0 ) ? renderer.gammaFactor : 1.0;
-
 	// console.log( 'building new program ' );
 
 	//
@@ -338,8 +336,6 @@ function WebGLProgram( renderer, extensions, code, material, shader, parameters,
 			customDefines,
 
 			parameters.supportsVertexTextures ? '#define VERTEX_TEXTURES' : '',
-
-			'#define GAMMA_FACTOR ' + gammaFactorDefine,
 
 			'#define MAX_BONES ' + parameters.maxBones,
 			( parameters.useFog && parameters.fog ) ? '#define USE_FOG' : '',
@@ -444,8 +440,6 @@ function WebGLProgram( renderer, extensions, code, material, shader, parameters,
 			customDefines,
 
 			parameters.alphaTest ? '#define ALPHATEST ' + parameters.alphaTest + ( parameters.alphaTest % 1 ? '' : '.0' ) : '', // add '.0' if integer
-
-			'#define GAMMA_FACTOR ' + gammaFactorDefine,
 
 			( parameters.useFog && parameters.fog ) ? '#define USE_FOG' : '',
 			( parameters.useFog && parameters.fogExp ) ? '#define FOG_EXP2' : '',
