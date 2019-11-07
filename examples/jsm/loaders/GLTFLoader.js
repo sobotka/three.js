@@ -60,6 +60,7 @@ import {
 	Skeleton,
 	SkinnedMesh,
 	SpotLight,
+	Texture,
 	TextureLoader,
 	TriangleFanDrawMode,
 	TriangleStripDrawMode,
@@ -78,6 +79,7 @@ var GLTFLoader = ( function () {
 
 		this.dracoLoader = null;
 		this.ddsLoader = null;
+		this.nodes = null;
 
 	}
 
@@ -170,6 +172,13 @@ var GLTFLoader = ( function () {
 		setDDSLoader: function ( ddsLoader ) {
 
 			this.ddsLoader = ddsLoader;
+			return this;
+
+		},
+
+		setNodeMaterialDictionary: function ( nodes ) {
+
+			this.nodes = nodes;
 			return this;
 
 		},
@@ -270,7 +279,8 @@ var GLTFLoader = ( function () {
 
 				path: path || this.resourcePath || '',
 				crossOrigin: this.crossOrigin,
-				manager: this.manager
+				manager: this.manager,
+				nodes: this.nodes
 
 			} );
 
@@ -429,7 +439,9 @@ var GLTFLoader = ( function () {
 
 	}
 
-	GLTFMaterialsUnlitExtension.prototype.getMaterialType = function () {
+	GLTFMaterialsUnlitExtension.prototype.getMaterialType = function ( nodes ) {
+
+		if ( nodes ) throw new Error( 'THREE.GLTFLoader: NodeMaterial not supported with unlit materials.' );
 
 		return MeshBasicMaterial;
 
@@ -693,7 +705,9 @@ var GLTFLoader = ( function () {
 				'refractionRatio',
 			],
 
-			getMaterialType: function () {
+			getMaterialType: function ( nodes ) {
+
+				if ( nodes ) throw new Error( 'THREE.GLTFLoader: NodeMaterial not supported with spec/gloss materials.' );
 
 				return ShaderMaterial;
 
@@ -1709,7 +1723,7 @@ var GLTFLoader = ( function () {
 	 * Requests the specified dependency asynchronously, with caching.
 	 * @param {string} type
 	 * @param {number} index
-	 * @return {Promise<Object3D|Material|THREE.Texture|AnimationClip|ArrayBuffer|Object>}
+	 * @return {Promise<Object3D|Material|Texture|AnimationClip|ArrayBuffer|Object>}
 	 */
 	GLTFParser.prototype.getDependency = function ( type, index ) {
 
@@ -2000,7 +2014,7 @@ var GLTFLoader = ( function () {
 	/**
 	 * Specification: https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#textures
 	 * @param {number} textureIndex
-	 * @return {Promise<THREE.Texture>}
+	 * @return {Promise<Texture>}
 	 */
 	GLTFParser.prototype.loadTexture = function ( textureIndex ) {
 
@@ -2285,13 +2299,13 @@ var GLTFLoader = ( function () {
 		if ( materialExtensions[ EXTENSIONS.KHR_MATERIALS_PBR_SPECULAR_GLOSSINESS ] ) {
 
 			var sgExtension = extensions[ EXTENSIONS.KHR_MATERIALS_PBR_SPECULAR_GLOSSINESS ];
-			materialType = sgExtension.getMaterialType();
+			materialType = sgExtension.getMaterialType( this.options.nodes );
 			pending.push( sgExtension.extendParams( materialParams, materialDef, parser ) );
 
 		} else if ( materialExtensions[ EXTENSIONS.KHR_MATERIALS_UNLIT ] ) {
 
 			var kmuExtension = extensions[ EXTENSIONS.KHR_MATERIALS_UNLIT ];
-			materialType = kmuExtension.getMaterialType();
+			materialType = kmuExtension.getMaterialType( this.options.nodes );
 			pending.push( kmuExtension.extendParams( materialParams, materialDef, parser ) );
 
 		} else {
@@ -2299,7 +2313,9 @@ var GLTFLoader = ( function () {
 			// Specification:
 			// https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#metallic-roughness-material
 
-			materialType = MeshStandardMaterial;
+			materialType = parser.options.nodes
+				? parser.options.nodes.MeshStandardNodeMaterial
+				: MeshStandardMaterial;
 
 			var metallicRoughness = materialDef.pbrMetallicRoughness || {};
 
@@ -2402,6 +2418,44 @@ var GLTFLoader = ( function () {
 			if ( materialType === ShaderMaterial ) {
 
 				material = extensions[ EXTENSIONS.KHR_MATERIALS_PBR_SPECULAR_GLOSSINESS ].createMaterial( materialParams );
+
+			} else if ( parser.options.nodes ) {
+
+				material = new materialType();
+
+				// material = Object.assign( new materialType(), materialParams );
+
+				for ( var name in materialParams ) {
+
+					if ( materialParams.hasOwnProperty( name ) ) {
+
+						var value = materialParams[ name ];
+
+						// TODO(donmccurdy): Getting errors if normalMap is set.
+						if ( name === 'normalMap' ) continue;
+
+						material[ name ] = value;
+
+						// if ( value instanceof Color ) {
+
+						// 	material[ name ] = value; //new parser.options.nodes.ColorNode( value );
+
+						// } else if ( value instanceof Texture ) {
+
+						// 	// TODO(donmccurdy): Getting errors if normalMap is set.
+						// 	if ( name === 'normalMap' ) continue;
+
+						// 	material[ name ] = new parser.options.nodes.TextureNode( value );
+
+						// } else if ( typeof value === 'number' ) {
+
+						// 	material[ name ] = new parser.options.nodes.FloatNode( value );
+
+						// }
+
+					}
+
+				}
 
 			} else {
 

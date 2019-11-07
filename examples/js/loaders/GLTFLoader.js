@@ -14,6 +14,7 @@ THREE.GLTFLoader = ( function () {
 
 		this.dracoLoader = null;
 		this.ddsLoader = null;
+		this.nodes = null;
 
 	}
 
@@ -106,6 +107,13 @@ THREE.GLTFLoader = ( function () {
 		setDDSLoader: function ( ddsLoader ) {
 
 			this.ddsLoader = ddsLoader;
+			return this;
+
+		},
+
+		setNodeMaterialDictionary: function ( nodes ) {
+
+			this.nodes = nodes;
 			return this;
 
 		},
@@ -206,7 +214,8 @@ THREE.GLTFLoader = ( function () {
 
 				path: path || this.resourcePath || '',
 				crossOrigin: this.crossOrigin,
-				manager: this.manager
+				manager: this.manager,
+				nodes: this.nodes
 
 			} );
 
@@ -365,7 +374,9 @@ THREE.GLTFLoader = ( function () {
 
 	}
 
-	GLTFMaterialsUnlitExtension.prototype.getMaterialType = function () {
+	GLTFMaterialsUnlitExtension.prototype.getMaterialType = function ( nodes ) {
+
+		if ( nodes ) throw new Error( 'THREE.GLTFLoader: NodeMaterial not supported with unlit materials.' );
 
 		return THREE.MeshBasicMaterial;
 
@@ -629,7 +640,9 @@ THREE.GLTFLoader = ( function () {
 				'refractionRatio',
 			],
 
-			getMaterialType: function () {
+			getMaterialType: function ( nodes ) {
+
+				if ( nodes ) throw new Error( 'THREE.GLTFLoader: NodeMaterial not supported with spec/gloss materials.' );
 
 				return THREE.ShaderMaterial;
 
@@ -2221,13 +2234,13 @@ THREE.GLTFLoader = ( function () {
 		if ( materialExtensions[ EXTENSIONS.KHR_MATERIALS_PBR_SPECULAR_GLOSSINESS ] ) {
 
 			var sgExtension = extensions[ EXTENSIONS.KHR_MATERIALS_PBR_SPECULAR_GLOSSINESS ];
-			materialType = sgExtension.getMaterialType();
+			materialType = sgExtension.getMaterialType( this.options.nodes );
 			pending.push( sgExtension.extendParams( materialParams, materialDef, parser ) );
 
 		} else if ( materialExtensions[ EXTENSIONS.KHR_MATERIALS_UNLIT ] ) {
 
 			var kmuExtension = extensions[ EXTENSIONS.KHR_MATERIALS_UNLIT ];
-			materialType = kmuExtension.getMaterialType();
+			materialType = kmuExtension.getMaterialType( this.options.nodes );
 			pending.push( kmuExtension.extendParams( materialParams, materialDef, parser ) );
 
 		} else {
@@ -2235,7 +2248,9 @@ THREE.GLTFLoader = ( function () {
 			// Specification:
 			// https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#metallic-roughness-material
 
-			materialType = THREE.MeshStandardMaterial;
+			materialType = parser.options.nodes
+				? parser.options.nodes.MeshStandardNodeMaterial
+				: THREE.MeshStandardMaterial;
 
 			var metallicRoughness = materialDef.pbrMetallicRoughness || {};
 
@@ -2338,6 +2353,44 @@ THREE.GLTFLoader = ( function () {
 			if ( materialType === THREE.ShaderMaterial ) {
 
 				material = extensions[ EXTENSIONS.KHR_MATERIALS_PBR_SPECULAR_GLOSSINESS ].createMaterial( materialParams );
+
+			} else if ( parser.options.nodes ) {
+
+				material = new materialType();
+
+				// material = Object.assign( new materialType(), materialParams );
+
+				for ( var name in materialParams ) {
+
+					if ( materialParams.hasOwnProperty( name ) ) {
+
+						var value = materialParams[ name ];
+
+						// TODO(donmccurdy): Getting errors if normalMap is set.
+						if ( name === 'normalMap' ) continue;
+
+						material[ name ] = value;
+
+						// if ( value instanceof THREE.Color ) {
+
+						// 	material[ name ] = value; //new parser.options.nodes.ColorNode( value );
+
+						// } else if ( value instanceof THREE.Texture ) {
+
+						// 	// TODO(donmccurdy): Getting errors if normalMap is set.
+						// 	if ( name === 'normalMap' ) continue;
+
+						// 	material[ name ] = new parser.options.nodes.TextureNode( value );
+
+						// } else if ( typeof value === 'number' ) {
+
+						// 	material[ name ] = new parser.options.nodes.FloatNode( value );
+
+						// }
+
+					}
+
+				}
 
 			} else {
 

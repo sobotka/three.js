@@ -21,6 +21,8 @@ MeshStandardNodeMaterial.prototype.constructor = MeshStandardNodeMaterial;
 
 NodeUtils.addShortcuts( MeshStandardNodeMaterial.prototype, 'properties', [
 	"color",
+	"emissive",
+	"emissiveMap",
 	"roughness",
 	"metalness",
 	"map",

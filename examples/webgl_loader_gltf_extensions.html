@@ -19,6 +19,7 @@
 		<script type="module">
 
 			import * as THREE from '../build/three.module.js';
+			import * as nodes from './jsm/nodes/Nodes.js';
 
 			import { GUI } from './jsm/libs/dat.gui.module.js';
 			import { OrbitControls } from './jsm/controls/OrbitControls.js';
@@ -195,7 +196,7 @@
 
 				}
 
-				scene = new THREE.Scene();
+				scene = window.scene = new THREE.Scene();
 				scene.background = new THREE.Color( 0x222222 );
 
 				camera = new THREE.PerspectiveCamera( 45, container.offsetWidth / container.offsetHeight, 0.001, 1000 );
@@ -267,6 +268,8 @@
 
 				loader = new GLTFLoader();
 
+				loader.setNodeMaterialDictionary( nodes );
+
 				var dracoLoader = new DRACOLoader();
 				dracoLoader.setDecoderPath( 'js/libs/draco/gltf/' );
 				loader.setDRACOLoader( dracoLoader );
@@ -332,7 +335,8 @@
 						object.traverse( function ( node ) {
 
 							if ( node.material && ( node.material.isMeshStandardMaterial ||
-								 ( node.material.isShaderMaterial && node.material.envMap !== undefined ) ) ) {
+								 ( node.material.isShaderMaterial && node.material.envMap !== undefined ) ||
+								 node.material.type === 'MeshStandardNodeMaterial' ) ) {
 
 								node.material.envMap = envMap;
 								node.material.envMapIntensity = 1.5; // boombox seems too dark otherwise

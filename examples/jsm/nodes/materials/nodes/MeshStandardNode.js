@@ -19,6 +19,7 @@ function MeshStandardNode() {
 
 	this.properties = {
 		color: new Color( 0xffffff ),
+		emissive: new Color( 0x000000 ),
 		roughness: 0.5,
 		metalness: 0.5,
 		normalScale: new Vector2( 1, 1 )
@@ -26,6 +27,7 @@ function MeshStandardNode() {
 
 	this.inputs = {
 		color: new PropertyNode( this.properties, 'color', 'c' ),
+		emissive: new PropertyNode( this.properties, 'emissive', 'c' ),
 		roughness: new PropertyNode( this.properties, 'roughness', 'f' ),
 		metalness: new PropertyNode( this.properties, 'metalness', 'f' ),
 		normalScale: new PropertyNode( this.properties, 'normalScale', 'v2' )
@@ -52,6 +54,23 @@ MeshStandardNode.prototype.build = function ( builder ) {
 			map = builder.resolve( props.map );
 
 		this.color = map ? new OperatorNode( color, map, OperatorNode.MUL ) : color;
+
+		// slots
+		// * emissive
+		// * emissiveMap
+		// * emissiveIntensity
+
+		var emissive = builder.findNode( props.emissive, inputs.emissive ),
+			emissiveMap = builder.resolve( props.emissiveMap ),
+			emissiveIntensity = builder.resolve( props.emissiveIntensity );
+
+		this.emissive = emissiveMap ? new OperatorNode( emissive, emissiveMap, OperatorNode.MUL ) : emissive;
+
+		if ( emissiveIntensity !== undefined ) {
+
+			this.emissive = new OperatorNode( this.emissive, emissiveIntensity, OperatorNode.MUL );
+
+		}
 
 		// slots
 		// * roughness
