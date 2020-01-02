@@ -130,8 +130,8 @@ function WebGLLights() {
 		},
 
 		config: new Uint16Array( 32 * NumberOfLightTypes ),
+		ambient: [],
 		ambientAffectedLayers: [],
-		ambient: [ ],
 		probe: [],
 		directional: [],
 		directionalAffectedLayers: [],
@@ -198,9 +198,8 @@ function WebGLLights() {
 
 			if ( light.isAmbientLight ) {
 
-				color = color.clone().multiplyScalar( intensity );
  				state.ambientAffectedLayers[ ambientLength ] = affectedLayers;
-				state.ambient[ ambientLength ] = color;
+				state.ambient[ ambientLength ] = light;
 				addLightToLightConfig( affectedLayers, state.config, 0, false );
  				ambientLength ++;
 
@@ -216,7 +215,7 @@ function WebGLLights() {
 
 				var uniforms = cache.get( light );
 
-				uniforms.color.copy( light.color ).multiplyScalar( light.intensity );
+				uniforms.color.copy( color ).multiplyScalar( light.intensity );
 				uniforms.direction.setFromMatrixPosition( light.matrixWorld );
 				vector3.setFromMatrixPosition( light.target.matrixWorld );
 				uniforms.direction.sub( vector3 );
@@ -330,7 +329,7 @@ function WebGLLights() {
 				uniforms.position.setFromMatrixPosition( light.matrixWorld );
 				uniforms.position.applyMatrix4( viewMatrix );
 
-				uniforms.color.copy( light.color ).multiplyScalar( light.intensity );
+				uniforms.color.copy( color ).multiplyScalar( light.intensity );
 				uniforms.distance = light.distance;
 				uniforms.decay = light.decay;
 
@@ -368,7 +367,7 @@ function WebGLLights() {
 				uniforms.direction.transformDirection( viewMatrix );
 				uniforms.direction.normalize();
 
-				uniforms.skyColor.copy( light.color ).multiplyScalar( intensity );
+				uniforms.skyColor.copy( color ).multiplyScalar( intensity );
 				uniforms.groundColor.copy( light.groundColor ).multiplyScalar( intensity );
 
 				state.hemiAffectedLayers[ hemiLength ] = affectedLayers;

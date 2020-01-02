@@ -51,9 +51,9 @@
 
 	<script>
 
-		if (WEBGL.isWebGLAvailable() === false) {
+		if (THREE.WEBGL.isWebGLAvailable() === false) {
 
-			document.body.appendChild(WEBGL.getWebGLErrorMessage());
+			document.body.appendChild(THREE.WEBGL.getWebGLErrorMessage());
 
 		}
 
@@ -78,9 +78,7 @@
 			document.body.appendChild(renderer.domElement);
 			renderer.shadowMap.enabled = true;
 			renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-			renderer.gammaInput = true;
-			renderer.gammaOutput = true;
+			renderer.outputEncoding = THREE.sRGBEncoding;
 
 			container.appendChild(renderer.domElement);
 
@@ -120,6 +118,7 @@
 			spotLight.shadow.mapSize.height = 1024;
 
 			spotLight.layers.enable(1);
+			spotLight.layers.enable(2);
 			spotLight.layers.enable(3);
 
 			scene.add(spotLight);
@@ -170,7 +169,7 @@
 
 			var gui = new dat.GUI();
 
-			var layers = { layer1: true, layer2: false, layer3: true };
+			var layers = { layer1: true, layer2: true, layer3: true };
 
 			var leverFolder = gui.addFolder('Layers');
 			gui.add(layers, 'layer1').onChange(function () {

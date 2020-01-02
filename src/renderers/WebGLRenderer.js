@@ -1625,7 +1625,7 @@ function WebGLRenderer( parameters ) {
 		materialProperties.needsLights = materialNeedsLights( material );
 		materialProperties.lightsStateVersion = lightsStateVersion;
 
-		if ( materialProperties.needsLights /* and material.needsUpdate? */ ) {
+		if ( materialProperties.needsLights ) {
 
 			// get all lights affecting this object's layers
 
@@ -1642,7 +1642,7 @@ function WebGLRenderer( parameters ) {
 			uniforms.directionalLights.value = directionalSetup.lights;
 			uniforms.spotLights.value = spotSetup.lights;
 			uniforms.rectAreaLights.value = rectAreaSetup.lights;
-			uniforms.pointLights.value = pointSetup.ligths;
+			uniforms.pointLights.value = pointSetup.lights;
 			uniforms.hemisphereLights.value = hemiSetup.lights;
 			uniforms.directionalShadowMap.value = directionalSetup.shadowMaps;
 			uniforms.directionalShadowMatrix.value = directionalSetup.shadowMatrices;
@@ -1651,6 +1651,9 @@ function WebGLRenderer( parameters ) {
 			uniforms.pointShadowMap.value = pointSetup.shadowMaps;
 			uniforms.pointShadowMatrix.value = pointSetup.shadowMatrices;
 			// TODO (abelnation): add area lights shadow info to uniforms
+
+			// TODO: should probes be affected by layers?
+			uniforms.lightProbe.value = lights.state.probe;
 
 		}
 
@@ -1709,9 +1712,9 @@ function WebGLRenderer( parameters ) {
 			lightLayers = lightAffectedLayers[ i ];
 			if ( lightLayers.test( materialLayers ) ) {
 
-				result[ 0 ] += light.r;
-				result[ 1 ] += light.g;
-				result[ 2 ] += light.b;
+				result[ 0 ] += light.color.r * light.intensity;
+				result[ 1 ] += light.color.g * light.intensity;
+				result[ 2 ] += light.color.b * light.intensity;
 
 			}
 
