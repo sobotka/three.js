@@ -6,6 +6,7 @@ import { Color } from '../../math/Color.js';
 import { Matrix4 } from '../../math/Matrix4.js';
 import { Vector2 } from '../../math/Vector2.js';
 import { Vector3 } from '../../math/Vector3.js';
+import { NumberOfLightTypes } from '../../constants.js';
 
 function UniformsCache() {
 
@@ -128,19 +129,26 @@ function WebGLLights() {
 			numSpotShadows: - 1,
 		},
 
-		ambient: [ 0, 0, 0 ],
+		config: new Uint16Array( 32 * NumberOfLightTypes ),
+		ambientAffectedLayers: [],
+		ambient: [ ],
 		probe: [],
 		directional: [],
+		directionalAffectedLayers: [],
 		directionalShadowMap: [],
 		directionalShadowMatrix: [],
 		spot: [],
+		spotAffectedLayers: [],
 		spotShadowMap: [],
 		spotShadowMatrix: [],
 		rectArea: [],
+		rectAreaAffectedLayers: [],
 		point: [],
+		pointAffectedLayers: [],
 		pointShadowMap: [],
 		pointShadowMatrix: [],
 		hemi: [],
+		hemiAffectedLayers: [],
 
 		numDirectionalShadows: - 1,
 		numPointShadows: - 1,
@@ -156,7 +164,6 @@ function WebGLLights() {
 
 	function setup( lights, shadows, camera ) {
 
-		var r = 0, g = 0, b = 0;
 
 		for ( var i = 0; i < 9; i ++ ) state.probe[ i ].set( 0, 0, 0 );
 
@@ -165,6 +172,7 @@ function WebGLLights() {
 		var spotLength = 0;
 		var rectAreaLength = 0;
 		var hemiLength = 0;
+		var ambientLength = 0;
 
 		var numDirectionalShadows = 0;
 		var numPointShadows = 0;
@@ -174,6 +182,8 @@ function WebGLLights() {
 
 		lights.sort( shadowCastingLightsFirst );
 
+		var affectedLayers;
+
 		for ( var i = 0, l = lights.length; i < l; i ++ ) {
 
 			var light = lights[ i ];
@@ -182,13 +192,17 @@ function WebGLLights() {
 			var intensity = light.intensity;
 			var distance = light.distance;
 
+			affectedLayers = light.layers;
+
 			var shadowMap = ( light.shadow && light.shadow.map ) ? light.shadow.map.texture : null;
 
 			if ( light.isAmbientLight ) {
 
-				r += color.r * intensity;
-				g += color.g * intensity;
-				b += color.b * intensity;
+				color = color.clone().multiplyScalar( intensity );
+ 				state.ambientAffectedLayers[ ambientLength ] = affectedLayers;
+				state.ambient[ ambientLength ] = color;
+				addLightToLightConfig( affectedLayers, state.config, 0, false );
+ 				ambientLength ++;
 
 			} else if ( light.isLightProbe ) {
 
@@ -225,7 +239,10 @@ function WebGLLights() {
 
 				}
 
+				state.directionalAffectedLayers[ directionalLength ] = affectedLayers;
 				state.directional[ directionalLength ] = uniforms;
+
+				addLightToLightConfig( affectedLayers, state.config, 1, light.castShadow );
 
 				directionalLength ++;
 
@@ -265,7 +282,10 @@ function WebGLLights() {
 
 				}
 
+				state.spotAffectedLayers[ spotLength ] = affectedLayers;
 				state.spot[ spotLength ] = uniforms;
+
+				addLightToLightConfig( affectedLayers, state.config, 2, light.castShadow );
 
 				spotLength ++;
 
@@ -296,8 +316,10 @@ function WebGLLights() {
 
 				// TODO (abelnation): RectAreaLight distance?
 				// uniforms.distance = distance;
-
+				state.rectAreaAffectedLayers[ rectAreaLength ] = affectedLayers;
 				state.rectArea[ rectAreaLength ] = uniforms;
+
+				addLightToLightConfig( affectedLayers, state.config, 3, light.castShadow );
 
 				rectAreaLength ++;
 
@@ -331,7 +353,10 @@ function WebGLLights() {
 
 				}
 
+				state.pointAffectedLayers[ pointLength ] = affectedLayers;
 				state.point[ pointLength ] = uniforms;
+
+				addLightToLightConfig( affectedLayers, state.config, 4, light.castShadow );
 
 				pointLength ++;
 
@@ -346,7 +371,10 @@ function WebGLLights() {
 				uniforms.skyColor.copy( light.color ).multiplyScalar( intensity );
 				uniforms.groundColor.copy( light.groundColor ).multiplyScalar( intensity );
 
+				state.hemiAffectedLayers[ hemiLength ] = affectedLayers;
 				state.hemi[ hemiLength ] = uniforms;
+
+				addLightToLightConfig( affectedLayers, state.config, 5, light.castShadow );
 
 				hemiLength ++;
 
@@ -354,13 +382,10 @@ function WebGLLights() {
 
 		}
 
-		state.ambient[ 0 ] = r;
-		state.ambient[ 1 ] = g;
-		state.ambient[ 2 ] = b;
-
 		var hash = state.hash;
 
-		if ( hash.directionalLength !== directionalLength ||
+		if ( hash.ambientLength !== ambientLength ||
+			hash.directionalLength !== directionalLength ||
 			hash.pointLength !== pointLength ||
 			hash.spotLength !== spotLength ||
 			hash.rectAreaLength !== rectAreaLength ||
@@ -369,6 +394,7 @@ function WebGLLights() {
 			hash.numPointShadows !== numPointShadows ||
 			hash.numSpotShadows !== numSpotShadows ) {
 
+			state.ambient.length = ambientLength;
 			state.directional.length = directionalLength;
 			state.spot.length = spotLength;
 			state.rectArea.length = rectAreaLength;
@@ -382,6 +408,7 @@ function WebGLLights() {
 			state.pointShadowMatrix.length = numPointShadows;
 			state.spotShadowMatrix.length = numSpotShadows;
 
+			hash.ambientLength = ambientLength;
 			hash.directionalLength = directionalLength;
 			hash.pointLength = pointLength;
 			hash.spotLength = spotLength;
@@ -393,6 +420,25 @@ function WebGLLights() {
 			hash.numSpotShadows = numSpotShadows;
 
 			state.version = nextVersion ++;
+
+		}
+
+	}
+
+	// Function used to count lights per type and per layer using a flat array.
+
+	function addLightToLightConfig( layers, config, typeIndex, castShadow ) {
+
+		var i = 0, mask = 0, index = 0;
+		for ( i = 0; i < 32; i ++ ) {
+
+			mask = 1 << i;
+			if ( mask & layers.mask && castShadow ) {
+
+				index = i * NumberOfLightTypes + typeIndex;
+				config[ index ] ++;
+
+			}
 
 		}
 
