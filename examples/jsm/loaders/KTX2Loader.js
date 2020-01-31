@@ -401,8 +401,11 @@ class KTX2Container {
 
 		for ( var level = 0; level < this.header.levelCount; level ++ ) {
 
-			var numBlocksX = Math.floor( ( width + ( blockWidth - 1 ) ) / blockWidth );
-			var numBlocksY = Math.floor( ( height + ( blockHeight - 1 ) ) / blockHeight );
+			var levelWidth = width / Math.pow( 2, level );
+			var levelHeight = height / Math.pow( 2, level );
+
+			var numBlocksX = Math.floor( ( levelWidth + ( blockWidth - 1 ) ) / blockWidth );
+			var numBlocksY = Math.floor( ( levelHeight + ( blockHeight - 1 ) ) / blockHeight );
 
 			var numImagesInLevel = 1; // TODO(donmccurdy): Support cubemaps.
 
@@ -416,7 +419,7 @@ class KTX2Container {
 					new Uint8Array( this.levels[level].bytes, imageDesc.alphaSliceByteOffset, imageDesc.alphaSliceByteLength ),
 					targetFormat,
 					level,
-					width, height,
+					levelWidth, levelHeight,
 					numBlocksX,
 					numBlocksY,
 					isVideo,
@@ -429,7 +432,7 @@ class KTX2Container {
 
 				}
 
-				mipmaps.push( { data: result.transcodedImage, width: width, height: height } );
+				mipmaps.push( { data: result.transcodedImage, width: levelWidth, height: levelHeight } );
 
 			}
 
