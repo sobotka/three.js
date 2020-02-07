@@ -15,6 +15,8 @@ import {
 	LinearFilter,
 	LinearMipmapLinearFilter,
 	RGB_ETC1_Format,
+	RGB_ETC2_Format,
+	RGBA_ETC2_EAC_Format,
 	RGB_PVRTC_4BPPV1_Format,
 	RGB_S3TC_DXT1_Format,
 	RGBA_ASTC_4x4_Format,
@@ -41,7 +43,8 @@ class KTX2Loader extends CompressedTextureLoader {
 
 		this.transcoderConfig = {
 			astcSupported: !! renderer.extensions.get( 'WEBGL_compressed_texture_astc' ),
-			etcSupported: !! renderer.extensions.get( 'WEBGL_compressed_texture_etc1' ),
+			etc1Supported: !! renderer.extensions.get( 'WEBGL_compressed_texture_etc1' ),
+			etc2Supported: !! renderer.extensions.get( 'WEBGL_compressed_texture_etc' ),
 			dxtSupported: !! renderer.extensions.get( 'WEBGL_compressed_texture_s3tc' ),
 			pvrtcSupported: !! renderer.extensions.get( 'WEBGL_compressed_texture_pvrtc' )
 				|| !! renderer.extensions.get( 'WEBKIT_WEBGL_compressed_texture_pvrtc' )
@@ -386,7 +389,12 @@ class KTX2Container {
 			targetFormat = hasAlpha ? TranscodeTarget.PVRTC1_4_RGBA : TranscodeTarget.PVRTC1_4_RGB;
 			this.transcodedFormat = hasAlpha ? RGBA_PVRTC_4BPPV1_Format : RGB_PVRTC_4BPPV1_Format;
 
-		} else if ( config.etcSupported ) {
+		} else if ( config.etc2Supported ) {
+
+			targetFormat = hasAlpha ? TranscodeTarget.ETC2_RGBA : TranscodeTarget.ETC1_RGB /* subset of ETC2 */;
+			this.transcodedFormat = hasAlpha ? RGBA_ETC2_EAC_Format : RGB_ETC2_Format;
+
+		} else if ( config.etc1Supported ) {
 
 			targetFormat = TranscodeTarget.ETC1_RGB;
 			this.transcodedFormat = RGB_ETC1_Format;
