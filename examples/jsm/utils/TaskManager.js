@@ -2,23 +2,18 @@ class TaskManager {
 
 	constructor () {
 
-		this.tasks = [];
+		this.tasks = {};
 		this.tasksInitialized = null;
 
 		this.workerLimit = typeof navigator === 'undefined' ? 4 : navigator.hardwareConcurrency;
 		this.workerPool = [];
 		this.workerNextTaskID = 1;
+		this.workerSource = '';
 		this.workerSourceURL = '';
 
 	}
 
 	setWorkerLimit ( workerLimit ) {
-
-		if ( workerLimit === 0 ) {
-
-			console.warn( 'THREE.TaskManager: workerLimit=0 not implemented.' );
-
-		}
 
 		this.workerLimit = workerLimit;
 
@@ -30,7 +25,7 @@ class TaskManager {
 
 		dependencies = dependencies || Promise.resolve( {} );
 
-		this.tasks.push( { type, impl, dependencies } );
+		this.tasks[ type ] = { type, scope: {}, init: impl.init, run: impl.run, dependencies };
 
 		return this;
 
@@ -40,7 +35,13 @@ class TaskManager {
 
 		if ( this.tasksInitialized ) return this.tasksInitialized;
 
-		var dependencies = this.tasks.map( ( t ) => t.dependencies );
+		var dependencies = [];
+
+		for ( var type in this.tasks ) {
+
+			dependencies.push( this.tasks[ type ].dependencies );
+
+		}
 
 		this.tasksInitialized = new Promise( ( resolve ) => {
 
@@ -50,22 +51,23 @@ class TaskManager {
 
 			var implBody = '';
 
-			for ( var i = 0; i < this.tasks.length; i ++ ) {
+			for ( var type in this.tasks ) {
 
-				var task = this.tasks[ i ];
+				var task = this.tasks[ type ];
 
 				implBody += [
 					task.type + ': {',
 					'scope: {},',
-					'init: ' + task.impl.init.toString() + ',',
-					'run: ' + task.impl.run.toString(),
+					'init: ' + task.init.toString() + ',',
+					'run: ' + task.run.toString(),
 					'},'
 				].join( '\n' );
 
 			}
 
-			body = body.replace( 'placeholder: \'placeholder\'', implBody );
+			body = 'var tasks = {\n' + implBody + '};\n' + body;
 
+			this.workerSource = body;
 			this.workerSourceURL = URL.createObjectURL( new Blob( [ body ] ) );
 
 			Promise.all( dependencies ).then( resolve );
@@ -127,21 +129,39 @@ class TaskManager {
 
 		return this._init().then( ( dependencies ) => {
 
-			if ( this.workerPool.length < this.workerLimit ) {
+			if ( this.workerPool.length < this.workerLimit ||
+					 this.workerPool.length === 0 && this.workerLimit === 0 ) {
 
-				var worker = new Worker( this.workerSourceURL );
+				var worker;
+
+				if ( this.workerLimit > 0 ) {
+
+					worker = new Worker( this.workerSourceURL );
+
+				} else {
+
+					var workerSelf = {};
+
+					worker = new TaskWorker( this.tasks, workerSelf );
+					worker.terminate = () => {};
+					worker.postMessage = ( data ) => { workerSelf.onmessage( { data } ); };
+					workerSelf.postMessage = ( data ) => { worker.onmessage( { data } ); };
+
+				}
 
 				worker._callbacks = {};
 				worker._taskCosts = {};
 				worker._taskLoad = 0;
 
-				for ( var i = 0; i < this.tasks.length; i ++ ) {
+				var i = 0;
+
+				for ( var type in this.tasks ) {
 
 					worker.postMessage( {
 
 						type: 'init',
-						task: this.tasks[ i ].type,
-						dependencies: dependencies[ i ]
+						task: type,
+						dependencies: dependencies[ i++ ]
 
 					} );
 
@@ -219,12 +239,10 @@ class TaskManager {
 
 }
 
-function TaskWorker () {
+// TODO(donmccurdy): This feels very fragile.
+function TaskWorker ( tasks, self ) {
 
-	// TODO(donmccurdy): This feels fragile.
-	var tasks = { placeholder: 'placeholder' };
-
-	onmessage = ( e ) => {
+	self.onmessage = ( e ) => {
 
 		var message = e.data;
 		var task = tasks[ message.task ];

@@ -15,11 +15,11 @@ export default QUnit.module( 'Utils', () => {
 
 		} );
 
-		// QUnit.test( 'serialization - main', ( assert ) => {
+		QUnit.test( 'serialization - main', ( assert ) => {
 
-		// 	testSerialization( assert, 0 );
+			testSerialization( assert, 0 );
 
-		// } );
+		} );
 
 		function testSerialization ( assert, workerLimit ) {
 
