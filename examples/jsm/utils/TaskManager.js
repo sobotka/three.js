@@ -154,11 +154,11 @@ class TaskManager {
 					switch ( message.type ) {
 
 						case 'complete':
-							worker._callbacks[ message.id ].resolve( message );
+							worker._callbacks[ message.id ].resolve( message.result );
 							break;
 
 						case 'error':
-							worker._callbacks[ message.id ].reject( message );
+							worker._callbacks[ message.id ].reject( message.error );
 							break;
 
 						default:
@@ -189,7 +189,7 @@ class TaskManager {
 
 	}
 
-	_releaseTask: function ( worker, taskID ) {
+	_releaseTask ( worker, taskID ) {
 
 		worker._taskLoad -= worker._taskCosts[ taskID ];
 		delete worker._callbacks[ taskID ];
@@ -197,13 +197,13 @@ class TaskManager {
 
 	}
 
-	debug: function () {
+	debug () {
 
 		console.log( 'Task load: ', this.workerPool.map( ( worker ) => worker._taskLoad ) );
 
 	}
 
-	dispose: function () {
+	dispose () {
 
 		for ( var i = 0; i < this.workerPool.length; ++ i ) {
 
@@ -261,4 +261,4 @@ function TaskWorker () {
 
 const DefaultTaskManager = new TaskManager();
 
-export { DefaultTaskManager, TaskManager, Task };
+export { DefaultTaskManager, TaskManager };

@@ -5,72 +5,67 @@
 
 import { TaskManager } from '../../../../examples/jsm/utils/TaskManager';
 
-export default QUnit.module( 'TaskManager', () => {
+export default QUnit.module( 'Utils', () => {
 
-	QUnit.test( 'init - worker', ( assert ) => {
+	QUnit.module( 'TaskManager', () => {
 
-		testInit( assert, 2 );
+		QUnit.test( 'serialization - worker', ( assert ) => {
+
+			testSerialization( assert, 2 );
+
+		} );
+
+		// QUnit.test( 'serialization - main', ( assert ) => {
+
+		// 	testSerialization( assert, 0 );
+
+		// } );
+
+		function testSerialization ( assert, workerLimit ) {
+
+			var done = assert.async();
+
+			var TestTask = {
+
+				init: ( scope, dependencies ) => {
+
+					scope.dependencies = dependencies;
+					scope.testData = 123;
+
+				},
+
+				run: ( scope, config ) => {
+
+					return Promise.resolve( [ {
+						sum: config.a + config.b,
+						testData: scope.testData,
+						dependencies: scope.dependencies
+					} ] );
+
+				}
+
+			};
+
+			var manager = new TaskManager()
+				.setWorkerLimit( workerLimit )
+				.register( 'test', TestTask, [ 'my-dependencies' ] );
+
+			manager
+				.run( 'test', { a: 3, b: 5 }, 0, [] )
+				.then( ( result ) => {
+
+					assert.equal( result.sum, 8, 'run result' );
+					assert.equal( result.testData, 123, 'init dynamic data' );
+					assert.smartEqual( result.dependencies, [ 'my-dependencies' ], 'init dependencies' );
+
+					manager.dispose();
+
+					done();
+
+				} );
+
+		}
 
 	} );
-
-	QUnit.test( 'init - main', ( assert ) => {
-
-		testInit( assert, 0 );
-
-	} );
-
-	QUnit.test( 'run - worker', ( assert ) => {
-
-		testRun( assert, 2 );
-
-	} );
-
-	QUnit.test( 'run - main', ( assert ) => {
-
-		testRun( assert, 0 );
-
-	} );
-
-	function testInit ( assert, workerLimit ) {
-
-		var done = assert.async();
-
-		const TestTask = {
-
-			init: ( scope, dependencies ) => {
-
-				scope.testData = 123;
-				scope.dependencies = dependencies;
-
-			},
-
-			run: ( scope, config ) => {
-
-				return Promise.resolve( scope );
-
-			}
-
-		};
-
-		var manager = new TaskManager()
-			.setWorkerLimit( workerLimit )
-			.register( 'test', TestTask, [ 'my-dependencies' ] )
-			.run( 'test', {}, 0, [] )
-			.then( ( result ) => {
-
-				assert.equal( result.testData, 123, 'dynamic data available' );
-				assert.equal( result.dependencies, 123, 'dependencies available' );
-
-				done();
-
-			} );
-
-	}
-
-	function testRun ( assert, workerLimit ) {
-
-		assert.equal( true, false, 'not implemented' );
-
-	}
 
 } );
