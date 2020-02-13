@@ -5,9 +5,11 @@ class TaskManager {
 		this.tasks = {};
 		this.tasksInitialized = null;
 
+		// TODO(donmccurdy): Default should probably be zero.
 		this.workerLimit = typeof navigator === 'undefined' ? 4 : navigator.hardwareConcurrency;
 		this.workerPool = [];
 		this.workerNextTaskID = 1;
+		this.workerScripts = [];
 		this.workerSource = '';
 		this.workerSourceURL = '';
 
@@ -16,6 +18,14 @@ class TaskManager {
 	setWorkerLimit ( workerLimit ) {
 
 		this.workerLimit = workerLimit;
+
+		return this;
+
+	}
+
+	addScript ( scriptContent ) {
+
+		this.workerScripts.push( scriptContent );
 
 		return this;
 
@@ -31,6 +41,7 @@ class TaskManager {
 
 	}
 
+	// TODO(donmccurdy): This is wasted work if workers are disabled.
 	_init () {
 
 		if ( this.tasksInitialized ) return this.tasksInitialized;
@@ -67,8 +78,8 @@ class TaskManager {
 
 			body = 'var tasks = {\n' + implBody + '};\n' + body;
 
-			this.workerSource = body;
-			this.workerSourceURL = URL.createObjectURL( new Blob( [ body ] ) );
+			this.workerSource = this.workerScripts.join('\n') + body;
+			this.workerSourceURL = URL.createObjectURL( new Blob( [ this.workerSource ] ) );
 
 			Promise.all( dependencies ).then( resolve );
 
@@ -140,6 +151,7 @@ class TaskManager {
 
 				} else {
 
+					// TODO(donmccurdy): .workerScripts need to be installed.
 					var workerSelf = {};
 
 					worker = new TaskWorker( this.tasks, workerSelf );

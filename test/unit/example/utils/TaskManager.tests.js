@@ -11,7 +11,7 @@ export default QUnit.module( 'Utils', () => {
 
 		QUnit.test( 'serialization - worker', ( assert ) => {
 
-			testSerialization( assert, 2 );
+			testSerialization( assert, 1 );
 
 		} );
 
