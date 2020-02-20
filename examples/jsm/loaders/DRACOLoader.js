@@ -237,32 +237,24 @@ DRACOLoader.prototype = Object.assign( Object.create( Loader.prototype ), {
 		if ( this.decoderPending ) return this.decoderPending;
 
 		var useJS = typeof WebAssembly !== 'object' || this.decoderConfig.type === 'js';
-		var librariesPending = [];
 
-		if ( useJS ) {
+		var scriptPath = this.decoderPath + ( useJS ? 'draco_decoder.js' : 'draco_wasm_wrapper.js' );
 
-			librariesPending.push( this._loadLibrary( 'draco_decoder.js', 'text' ) );
+		var wasmPending = useJS
+			? Promise.resolve( null )
+			: this._loadLibrary( 'draco_decoder.wasm', 'arraybuffer' );
 
-		} else {
+		this.decoderPending = wasmPending
+			.then( ( wasmBinary ) => {
 
-			librariesPending.push( this._loadLibrary( 'draco_wasm_wrapper.js', 'text' ) );
-			librariesPending.push( this._loadLibrary( 'draco_decoder.wasm', 'arraybuffer' ) );
+				if ( wasmBinary ) {
 
-		}
-
-		this.decoderPending = Promise.all( librariesPending )
-			.then( ( libraries ) => {
-
-				var jsContent = libraries[ 0 ];
-
-				if ( ! useJS ) {
-
-					this.decoderConfig.wasmBinary = libraries[ 1 ];
+					this.decoderConfig.wasmBinary = wasmBinary;
 
 				}
 
 				this.taskManager
-					.addScript( jsContent )
+					.addScript( this.manager.resolveURL( scriptPath ) )
 					.register( 'draco', DracoTask, [ this.decoderConfig ] );
 
 			} );

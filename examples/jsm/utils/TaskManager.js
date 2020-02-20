@@ -76,9 +76,13 @@ class TaskManager {
 
 			}
 
-			body = 'var tasks = {\n' + implBody + '};\n' + body;
+			body = 'self.tasks = {\n' + implBody + '};\n' + body;
 
-			this.workerSource = this.workerScripts.join('\n') + body;
+			// TODO: Need to resolve relative URLs...
+			var scripts = this.workerScripts.map( ( src ) => '"' + src + '"' );
+			body = 'self.scripts = [ ' + scripts.join( ', ' ) + ' ];\n' + body;
+
+			this.workerSource = body;
 			this.workerSourceURL = URL.createObjectURL( new Blob( [ this.workerSource ] ) );
 
 			Promise.all( dependencies ).then( resolve );
@@ -138,6 +142,8 @@ class TaskManager {
 
 	_getWorker ( taskID, taskCost ) {
 
+		console.log('_getWorker');
+
 		return this._init().then( ( dependencies ) => {
 
 			if ( this.workerPool.length < this.workerLimit ||
@@ -151,10 +157,9 @@ class TaskManager {
 
 				} else {
 
-					// TODO(donmccurdy): .workerScripts need to be installed.
-					var workerSelf = {};
+					var workerSelf = { tasks: this.tasks, scripts: this.workerScripts };
 
-					worker = new TaskWorker( this.tasks, workerSelf );
+					worker = new TaskWorker( workerSelf );
 					worker.terminate = () => {};
 					worker.postMessage = ( data ) => { workerSelf.onmessage( { data } ); };
 					workerSelf.postMessage = ( data ) => { worker.onmessage( { data } ); };
@@ -251,23 +256,28 @@ class TaskManager {
 
 }
 
-// TODO(donmccurdy): This feels very fragile.
-function TaskWorker ( tasks, self ) {
+// TODO(donmccurdy): This feels fragile.
+function TaskWorker ( self ) {
+
+	console.info('worker::load', self.location);
+	var scriptsPending = Promise.resolve( importScripts( self.scripts ) );
 
 	self.onmessage = ( e ) => {
 
 		var message = e.data;
-		var task = tasks[ message.task ];
+		var task = self.tasks[ message.task ];
 
 		switch ( message.type ) {
 
 			case 'init':
-				task.init( task.scope, message.dependencies );
+				console.info('worker::init');
+				task.initPending = scriptsPending.then( () => task.init( task.scope, message.dependencies ) );
 				break;
 
 			case 'run':
-				task
-					.run( task.scope, message.config )
+				console.info('worker::run');
+				task.initPending
+					.then( () => task.run( task.scope, message.config ) )
 					.then( ( [ result, transfer ] ) => {
 
 						self.postMessage( { type: 'complete', id: message.id, result }, transfer );
@@ -286,6 +296,32 @@ function TaskWorker ( tasks, self ) {
 		}
 
 	};
+
+}
+
+/** Asynchronous version of WorkerGlobalScope.importScripts(), for main thread. */
+function importScripts ( ...scripts ) {
+
+	var scriptsPending = [];
+
+	for ( var i = 0; i < scripts.length; i ++ ) {
+
+		var scriptEl = document.createElement( 'script' );
+		scriptEl.type = 'text/javascript';
+		scriptEl.src = scripts[ i ];
+
+		scriptsPending.push( new Promise( ( resolve, reject ) => {
+
+			scriptEl.onload = resolve;
+			scriptEl.onerror = reject;
+
+		} ) );
+
+		document.head.appendChild( scriptEl );
+
+	}
+
+	return Promise.all( scriptsPending );
 
 }
 

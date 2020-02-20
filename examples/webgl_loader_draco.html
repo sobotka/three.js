@@ -61,6 +61,8 @@
 			light.position.set( - 1, 1, 1 );
 			scene.add( light );
 
+			// dracoLoader.taskManager.setWorkerLimit( 0 );
+
 			dracoLoader.load( 'models/draco/bunny.drc', function ( geometry ) {
 
 				geometry.computeVertexNormals();
