@@ -31,7 +31,8 @@ THREE.BasisTextureLoader = function ( manager ) {
 	this.workerConfig = {
 		format: null,
 		astcSupported: false,
-		etcSupported: false,
+		etc1Supported: false,
+		etc2Supported: false,
 		dxtSupported: false,
 		pvrtcSupported: false,
 	};
@@ -63,7 +64,8 @@ THREE.BasisTextureLoader.prototype = Object.assign( Object.create( THREE.Loader.
 		var config = this.workerConfig;
 
 		config.astcSupported = !! renderer.extensions.get( 'WEBGL_compressed_texture_astc' );
-		config.etcSupported = !! renderer.extensions.get( 'WEBGL_compressed_texture_etc1' );
+		config.etc1Supported = !! renderer.extensions.get( 'WEBGL_compressed_texture_etc1' );
+		config.etc2Supported = !! renderer.extensions.get( 'WEBGL_compressed_texture_etc' );
 		config.dxtSupported = !! renderer.extensions.get( 'WEBGL_compressed_texture_s3tc' );
 		config.pvrtcSupported = !! renderer.extensions.get( 'WEBGL_compressed_texture_pvrtc' )
 			|| !! renderer.extensions.get( 'WEBKIT_WEBGL_compressed_texture_pvrtc' );
@@ -80,7 +82,11 @@ THREE.BasisTextureLoader.prototype = Object.assign( Object.create( THREE.Loader.
 
 			config.format = THREE.BasisTextureLoader.BASIS_FORMAT.cTFPVRTC1_4_RGBA;
 
-		} else if ( config.etcSupported ) {
+		} else if ( config.etc2Supported ) {
+
+			config.format = THREE.BasisTextureLoader.BASIS_FORMAT.cTFETC2;
+
+		} else if ( config.etc1Supported ) {
 
 			config.format = THREE.BasisTextureLoader.BASIS_FORMAT.cTFETC1;
 
@@ -152,6 +158,9 @@ THREE.BasisTextureLoader.prototype = Object.assign( Object.create( THREE.Loader.
 					case THREE.BasisTextureLoader.BASIS_FORMAT.cTFBC1:
 					case THREE.BasisTextureLoader.BASIS_FORMAT.cTFBC3:
 						texture = new THREE.CompressedTexture( mipmaps, width, height, THREE.BasisTextureLoader.DXT_FORMAT_MAP[ config.format ], THREE.UnsignedByteType );
+						break;
+					case THREE.BasisTextureLoader.BASIS_FORMAT.cTFETC2:
+						texture = new THREE.CompressedTexture( mipmaps, width, height, THREE.RGB_ETC2_Format );
 						break;
 					case THREE.BasisTextureLoader.BASIS_FORMAT.cTFETC1:
 						texture = new THREE.CompressedTexture( mipmaps, width, height, THREE.RGB_ETC1_Format );

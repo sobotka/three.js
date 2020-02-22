@@ -13,6 +13,7 @@ import {
 	RGBA_ASTC_4x4_Format,
 	RGBA_PVRTC_4BPPV1_Format,
 	RGB_ETC1_Format,
+	RGB_ETC2_Format,
 	RGB_PVRTC_4BPPV1_Format,
 	UnsignedByteType
 } from "../../../build/three.module.js";
@@ -44,7 +45,8 @@ var BasisTextureLoader = function ( manager ) {
 	this.workerConfig = {
 		format: null,
 		astcSupported: false,
-		etcSupported: false,
+		etc1Supported: false,
+		etc2Supported: false,
 		dxtSupported: false,
 		pvrtcSupported: false,
 	};
@@ -76,12 +78,15 @@ BasisTextureLoader.prototype = Object.assign( Object.create( Loader.prototype ),
 		var config = this.workerConfig;
 
 		config.astcSupported = !! renderer.extensions.get( 'WEBGL_compressed_texture_astc' );
-		config.etcSupported = !! renderer.extensions.get( 'WEBGL_compressed_texture_etc1' );
+		config.etc1Supported = !! renderer.extensions.get( 'WEBGL_compressed_texture_etc1' );
+		config.etc2Supported = !! renderer.extensions.get( 'WEBGL_compressed_texture_etc' );
 		config.dxtSupported = !! renderer.extensions.get( 'WEBGL_compressed_texture_s3tc' );
 		config.pvrtcSupported = !! renderer.extensions.get( 'WEBGL_compressed_texture_pvrtc' )
 			|| !! renderer.extensions.get( 'WEBKIT_WEBGL_compressed_texture_pvrtc' );
 
-		if ( config.astcSupported ) {
+		let isETC2 = false;
+
+		if ( config.astcSupported && false ) {
 
 			config.format = BasisTextureLoader.BASIS_FORMAT.cTFASTC_4x4;
 
@@ -93,7 +98,12 @@ BasisTextureLoader.prototype = Object.assign( Object.create( Loader.prototype ),
 
 			config.format = BasisTextureLoader.BASIS_FORMAT.cTFPVRTC1_4_RGBA;
 
-		} else if ( config.etcSupported ) {
+		} else if ( config.etc2Supported ) {
+
+			isETC2 = true;
+			config.format = BasisTextureLoader.BASIS_FORMAT.cTFETC2;
+
+		} else if ( config.etc1Supported ) {
 
 			config.format = BasisTextureLoader.BASIS_FORMAT.cTFETC1;
 
@@ -102,6 +112,9 @@ BasisTextureLoader.prototype = Object.assign( Object.create( Loader.prototype ),
 			throw new Error( 'THREE.BasisTextureLoader: No suitable compressed texture format found.' );
 
 		}
+
+		// TODO
+		alert(JSON.stringify({isETC2, ...config}, null, 2));
 
 		return this;
 
@@ -165,6 +178,9 @@ BasisTextureLoader.prototype = Object.assign( Object.create( Loader.prototype ),
 					case BasisTextureLoader.BASIS_FORMAT.cTFBC1:
 					case BasisTextureLoader.BASIS_FORMAT.cTFBC3:
 						texture = new CompressedTexture( mipmaps, width, height, BasisTextureLoader.DXT_FORMAT_MAP[ config.format ], UnsignedByteType );
+						break;
+					case BasisTextureLoader.BASIS_FORMAT.cTFETC2:
+						texture = new CompressedTexture( mipmaps, width, height, RGB_ETC2_Format );
 						break;
 					case BasisTextureLoader.BASIS_FORMAT.cTFETC1:
 						texture = new CompressedTexture( mipmaps, width, height, RGB_ETC1_Format );
@@ -454,8 +470,11 @@ BasisTextureLoader.BasisWorker = function () {
 
 			switch ( config.format ) {
 
-				case 9: // Hardcoded: BasisTextureLoader.BASIS_FORMAT.cTFPVRTC1_4_RGBA
-					config.format = 8; // Hardcoded: BasisTextureLoader.BASIS_FORMAT.cTFPVRTC1_4_RGB;
+				case 1: // cTFETC2
+					config.format = 0; // cTFETC1
+					break;
+				case 9: // cTFPVRTC1_4_RGBA
+					config.format = 8; // cTFPVRTC1_4_RGB;
 					break;
 				default:
 					break;
