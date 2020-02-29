@@ -56,6 +56,24 @@ function onDocumentLoad( event ) {
 
 	var text = document.body.innerHTML;
 
+	text = text.replace( /\[import:([\w]+) ([\w\.\s\/]+)\]/gi, `
+<h2>Import</h2>
+<p>
+	$1 is optional, and must be included in your project before use. For more information
+	about ES modules, see [link:#manual/introduction/Import-via-modules import via modules].
+</p>
+
+<div class="import-wrap">
+	<select>
+		<option value="npm" selected>npm</option>
+		<option value="script">script</option>
+	</select>
+	<code data-import="npm">import { $1 } from 'three/$2';</code></pre>
+	<code data-import="script" style="display: none;">&lt;script src="$1.js">&lt;/script></code></pre>
+	<a data-import="script" style="display: none;" href="https://three-unmodularize.now.sh/three/$2" target="_blank">Download</a>
+</div>
+` );
+
 	text = text.replace( /\[name\]/gi, name );
 	text = text.replace( /\[path\]/gi, path );
 	text = text.replace( /\[page:([\w\.]+)\]/gi, "[page:$1 $1]" ); // [page:name] to [page:name title]
