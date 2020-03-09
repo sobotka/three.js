@@ -155,6 +155,14 @@ THREE.GLTFLoader = ( function () {
 
 			}
 
+			var parser = new GLTFParser( json, {
+
+				path: path || this.resourcePath || '',
+				crossOrigin: this.crossOrigin,
+				manager: this.manager
+
+			} );
+
 			if ( json.extensionsUsed ) {
 
 				for ( var i = 0; i < json.extensionsUsed.length; ++ i ) {
@@ -165,15 +173,15 @@ THREE.GLTFLoader = ( function () {
 					switch ( extensionName ) {
 
 						case EXTENSIONS.KHR_LIGHTS_PUNCTUAL:
-							extensions[ extensionName ] = new GLTFLightsExtension( json );
+							extensions[ extensionName ] = new GLTFLightsExtension( parser );
 							break;
 
 						case EXTENSIONS.KHR_MATERIALS_CLEARCOAT:
-							extensions[ extensionName ] = new GLTFMaterialsClearcoatExtension();
+							extensions[ extensionName ] = new GLTFMaterialsClearcoatExtension( parser );
 							break;
 
 						case EXTENSIONS.KHR_MATERIALS_UNLIT:
-							extensions[ extensionName ] = new GLTFMaterialsUnlitExtension();
+							extensions[ extensionName ] = new GLTFMaterialsUnlitExtension( parser );
 							break;
 
 						case EXTENSIONS.KHR_MATERIALS_PBR_SPECULAR_GLOSSINESS:
@@ -210,14 +218,7 @@ THREE.GLTFLoader = ( function () {
 
 			}
 
-			var parser = new GLTFParser( json, extensions, {
-
-				path: path || this.resourcePath || '',
-				crossOrigin: this.crossOrigin,
-				manager: this.manager
-
-			} );
-
+			parser.setExtensions( extensions );
 			parser.parse( onLoad, onError );
 
 		}
@@ -300,17 +301,23 @@ THREE.GLTFLoader = ( function () {
 	 *
 	 * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_lights_punctual
 	 */
-	function GLTFLightsExtension( json ) {
+	function GLTFLightsExtension( parser ) {
 
 		this.name = EXTENSIONS.KHR_LIGHTS_PUNCTUAL;
+		this.parser = parser;
 
 		var extension = ( json.extensions && json.extensions[ EXTENSIONS.KHR_LIGHTS_PUNCTUAL ] ) || {};
 		this.lightDefs = extension.lights || [];
 
 	}
 
-	GLTFLightsExtension.prototype.loadLight = function ( lightIndex ) {
+	GLTFLightsExtension.prototype.extendNode = function ( index, node ) {
 
+		var nodeDef = this.parser.json.nodes[ index ];
+
+		if ( ! hasExtension( nodeDef, this.name ) ) return null;
+
+		var lightIndex = nodeDef.extensions[ this.name ].light;
 		var lightDef = this.lightDefs[ lightIndex ];
 		var lightNode;
 
@@ -360,7 +367,18 @@ THREE.GLTFLoader = ( function () {
 
 		lightNode.name = lightDef.name || ( 'light_' + lightIndex );
 
-		return Promise.resolve( lightNode );
+		if ( node.constructor === THREE.Object3D ) {
+
+			THREE.Object3D.copy.call( node, lightNode );
+			node = lightNode;
+
+		} else {
+
+			node.add( lightNode );
+
+		}
+
+		return Promise.resolve( node );
 
 	};
 
@@ -369,47 +387,35 @@ THREE.GLTFLoader = ( function () {
 	 *
 	 * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_materials_unlit
 	 */
-	function GLTFMaterialsUnlitExtension() {
+	function GLTFMaterialsUnlitExtension( parser ) {
 
 		this.name = EXTENSIONS.KHR_MATERIALS_UNLIT;
+		this.parser = parser;
 
 	}
 
-	GLTFMaterialsUnlitExtension.prototype.getMaterialType = function () {
+	GLTFMaterialsUnlitExtension.prototype.getMaterialType = function ( index ) {
+
+		var materialDef = this.parser.json.materials[ index ];
+
+		if ( ! hasExtension( materialDef, this.name ) ) return null;
 
 		return THREE.MeshBasicMaterial;
 
 	};
 
-	GLTFMaterialsUnlitExtension.prototype.extendParams = function ( materialParams, materialDef, parser ) {
+	GLTFMaterialsUnlitExtension.prototype.loadMaterial = function ( index ) {
 
-		var pending = [];
+		var materialDef = this.parser.json.materials[ index ];
 
-		materialParams.color = new THREE.Color( 1.0, 1.0, 1.0 );
-		materialParams.opacity = 1.0;
+		if ( ! hasExtension( materialDef, this.name ) ) return null;
 
-		var metallicRoughness = materialDef.pbrMetallicRoughness;
+		var metallicRoughness = materialDef.pbrMetallicRoughness || {};
+		delete metallicRoughness.occlusionTexture;
+		delete metallicRoughness.metallicRoughnessTexture;
+		// ... do we need to delete these?
 
-		if ( metallicRoughness ) {
-
-			if ( Array.isArray( metallicRoughness.baseColorFactor ) ) {
-
-				var array = metallicRoughness.baseColorFactor;
-
-				materialParams.color.fromArray( array );
-				materialParams.opacity = array[ 3 ];
-
-			}
-
-			if ( metallicRoughness.baseColorTexture !== undefined ) {
-
-				pending.push( parser.assignTexture( materialParams, 'map', metallicRoughness.baseColorTexture ) );
-
-			}
-
-		}
-
-		return Promise.all( pending );
+		return this.parser.loadMaterial( index );
 
 	};
 
@@ -418,58 +424,86 @@ THREE.GLTFLoader = ( function () {
 	 *
 	 * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_materials_clearcoat
 	 */
-	function GLTFMaterialsClearcoatExtension() {
+	function GLTFMaterialsClearcoatExtension( parser ) {
 
 		this.name = EXTENSIONS.KHR_MATERIALS_CLEARCOAT;
+		this.parser = parser;
 
 	}
 
-	GLTFMaterialsClearcoatExtension.prototype.getMaterialType = function () {
+	GLTFMaterialsClearcoatExtension.prototype.getMaterialType = function ( index ) {
+
+		var materialDef = this.parser.json.materials[ index ];
+
+		if ( ! hasExtension( materialDef, this.name ) ) return null;
 
 		return THREE.MeshPhysicalMaterial;
 
 	};
 
-	GLTFMaterialsClearcoatExtension.prototype.extendParams = function ( materialParams, materialDef, parser ) {
+	GLTFMaterialsClearcoatExtension.prototype.loadMaterial = function ( index ) {
+
+		var materialDef = this.parser.json.materials[ index ];
+
+		if ( ! hasExtension( materialDef, this.name ) ) return null;
+
+		var parser = this.parser;
+		var ext = materialDef.extensions[ this.name ];
+
+		// Preload.
+		if ( ext.clearcoatTexture !== undefined ) parser.getDependency( 'texture', ext.clearcoatTexture.index );
+		if ( ext.clearcoatRoughnessTexture !== undefined ) parser.getDependency( 'texture', ext.clearcoatRoughnessTexture.index );
+		if ( ext.clearcoatNormalTexture !== undefined ) parser.getDependency( 'texture', ext.clearcoatNormalTexture.index );
+
+		return null;
+
+	};
+
+	GLTFMaterialsClearcoatExtension.prototype.extendMaterialParams = function ( index, material ) {
+
+		var materialDef = this.parser.json.materials[ index ];
+
+		if ( ! hasExtension( materialDef, this.name ) ) return null;
 
 		var pending = [];
+		var parser = this.parser;
 
 		var extension = materialDef.extensions[ this.name ];
 
 		if ( extension.clearcoatFactor !== undefined ) {
 
-			materialParams.clearcoat = extension.clearcoatFactor;
+			material.clearcoat = extension.clearcoatFactor;
 
 		}
 
 		if ( extension.clearcoatTexture !== undefined ) {
 
-			pending.push( parser.assignTexture( materialParams, 'clearcoatMap', extension.clearcoatTexture ) );
+			pending.push( parser.assignTexture( material, 'clearcoatMap', extension.clearcoatTexture ) );
 
 		}
 
 		if ( extension.clearcoatRoughnessFactor !== undefined ) {
 
-			materialParams.clearcoatRoughness = extension.clearcoatRoughnessFactor;
+			material.clearcoatRoughness = extension.clearcoatRoughnessFactor;
 
 		}
 
 		if ( extension.clearcoatRoughnessTexture !== undefined ) {
 
-			pending.push( parser.assignTexture( materialParams, 'clearcoatRoughnessMap', extension.clearcoatRoughnessTexture ) );
+			pending.push( parser.assignTexture( material, 'clearcoatRoughnessMap', extension.clearcoatRoughnessTexture ) );
 
 		}
 
 		if ( extension.clearcoatNormalTexture !== undefined ) {
 
-			pending.push( parser.assignTexture( materialParams, 'clearcoatNormalMap', extension.clearcoatNormalTexture ) );
+			pending.push( parser.assignTexture( material, 'clearcoatNormalMap', extension.clearcoatNormalTexture ) );
 
 			if ( extension.clearcoatNormalTexture.scale !== undefined ) {
 
 				var scale = extension.clearcoatNormalTexture.scale;
 
 				// TODO(donmccurdy): This probably needs testing, e.g. with/without vertex tangents.
-				materialParams.clearcoatNormalScale = new THREE.Vector2( scale, scale );
+				material.clearcoatNormalScale = new THREE.Vector2( scale, scale );
 
 			}
 
@@ -1394,13 +1428,19 @@ THREE.GLTFLoader = ( function () {
 
 	}
 
+	function hasExtension ( def, name ) {
+
+		return ( def.extensions && def.extensions[ name ] ) !== undefined;
+
+	}
+
 	/* GLTF PARSER */
 
-	function GLTFParser( json, extensions, options ) {
+	function GLTFParser( json, options ) {
 
 		this.json = json || {};
-		this.extensions = extensions || {};
 		this.options = options || {};
+		this.extensions = {};
 
 		// loader object cache
 		this.cache = new GLTFRegistry();
@@ -1421,6 +1461,12 @@ THREE.GLTFLoader = ( function () {
 		}
 
 	}
+
+	GLTFParser.prototype.setExtensions = function ( extensions ) {
+
+		this.extensions = extensions;
+
+	};
 
 	GLTFParser.prototype.parse = function ( onLoad, onError ) {
 
@@ -1525,6 +1571,32 @@ THREE.GLTFLoader = ( function () {
 
 	};
 
+	GLTFParser.prototype.invokeOne = function ( fn ) {
+
+		var extensions = [ ... Object.values( this.extensions ), this ];
+
+		for ( var ext of extensions ) {
+
+			var result = fn( ext );
+
+			if ( result ) return result;
+
+		}
+
+	};
+
+	GLTFParser.prototype.invokeAll = function ( fn ) {
+
+		var extensions = [ this, ... Object.values( this.extensions ) ];
+
+		var pending = [];
+
+		for ( var ext of extensions  ) pending.push( fn( ext ) );
+
+		return Promise.all( pending );
+
+	};
+
 	/**
 	 * Requests the specified dependency asynchronously, with caching.
 	 * @param {string} type
@@ -1545,7 +1617,7 @@ THREE.GLTFLoader = ( function () {
 					break;
 
 				case 'node':
-					dependency = this.loadNode( index );
+					dependency = this.invokeOne( ( ext ) => ext.loadNode && ext.loadNode( index ) );
 					break;
 
 				case 'mesh':
@@ -1557,7 +1629,7 @@ THREE.GLTFLoader = ( function () {
 					break;
 
 				case 'bufferView':
-					dependency = this.loadBufferView( index );
+					dependency = this.invokeOne( ( ext ) => ext.loadBufferView && ext.loadBufferView( index ) );
 					break;
 
 				case 'buffer':
@@ -1565,11 +1637,11 @@ THREE.GLTFLoader = ( function () {
 					break;
 
 				case 'material':
-					dependency = this.loadMaterial( index );
+					dependency = this.invokeOne( ( ext ) => ext.loadMaterial && ext.loadMaterial( index ) );
 					break;
 
 				case 'texture':
-					dependency = this.loadTexture( index );
+					dependency = this.invokeOne( ( ext ) => ext.loadTexture && ext.loadTexture( index ) );
 					break;
 
 				case 'skin':
@@ -1582,10 +1654,6 @@ THREE.GLTFLoader = ( function () {
 
 				case 'camera':
 					dependency = this.loadCamera( index );
-					break;
-
-				case 'light':
-					dependency = this.extensions[ EXTENSIONS.KHR_LIGHTS_PUNCTUAL ].loadLight( index );
 					break;
 
 				default:
@@ -2106,24 +2174,10 @@ THREE.GLTFLoader = ( function () {
 
 		var pending = [];
 
-		if ( materialExtensions[ EXTENSIONS.KHR_MATERIALS_PBR_SPECULAR_GLOSSINESS ] ) {
-
-			var sgExtension = extensions[ EXTENSIONS.KHR_MATERIALS_PBR_SPECULAR_GLOSSINESS ];
-			materialType = sgExtension.getMaterialType();
-			pending.push( sgExtension.extendParams( materialParams, materialDef, parser ) );
-
-		} else if ( materialExtensions[ EXTENSIONS.KHR_MATERIALS_UNLIT ] ) {
-
-			var kmuExtension = extensions[ EXTENSIONS.KHR_MATERIALS_UNLIT ];
-			materialType = kmuExtension.getMaterialType();
-			pending.push( kmuExtension.extendParams( materialParams, materialDef, parser ) );
-
-		} else {
+		materialType = this.invokeOne( ( ext ) => ext.getMaterialType && ext.getMaterialType( materialIndex ) );
 
 			// Specification:
 			// https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#metallic-roughness-material
-
-			materialType = THREE.MeshStandardMaterial;
 
 			var metallicRoughness = materialDef.pbrMetallicRoughness || {};
 
@@ -2154,8 +2208,6 @@ THREE.GLTFLoader = ( function () {
 				pending.push( parser.assignTexture( materialParams, 'roughnessMap', metallicRoughness.metallicRoughnessTexture ) );
 
 			}
-
-		}
 
 		if ( materialDef.doubleSided === true ) {
 
@@ -2222,27 +2274,11 @@ THREE.GLTFLoader = ( function () {
 
 		}
 
-		if ( materialExtensions[ EXTENSIONS.KHR_MATERIALS_CLEARCOAT ] ) {
-
-			var clearcoatExtension = extensions[ EXTENSIONS.KHR_MATERIALS_CLEARCOAT ];
-			materialType = clearcoatExtension.getMaterialType();
-			pending.push( clearcoatExtension.extendParams( materialParams, { extensions: materialExtensions }, parser ) );
-
-		}
+		pending.push( this.invokeAll( ( ext ) => ext.extendMaterialParams && ext.extendMaterialParams( materialIndex, materialParams ) ) );
 
 		return Promise.all( pending ).then( function () {
 
-			var material;
-
-			if ( materialType === GLTFMeshStandardSGMaterial ) {
-
-				material = extensions[ EXTENSIONS.KHR_MATERIALS_PBR_SPECULAR_GLOSSINESS ].createMaterial( materialParams );
-
-			} else {
-
-				material = new materialType( materialParams );
-
-			}
+			var material = new materialType( materialParams );
 
 			if ( materialDef.name ) material.name = materialDef.name;
 
@@ -2503,6 +2539,12 @@ THREE.GLTFLoader = ( function () {
 		return newGeometry;
 
 	}
+
+	GLTFParser.prototype.getMaterialType = function () {
+
+		return THREE.MeshStandardMaterial;
+
+	};
 
 	/**
 	 * Specification: https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#geometry
@@ -3032,13 +3074,7 @@ THREE.GLTFLoader = ( function () {
 
 			}
 
-			if ( nodeDef.extensions
-				&& nodeDef.extensions[ EXTENSIONS.KHR_LIGHTS_PUNCTUAL ]
-				&& nodeDef.extensions[ EXTENSIONS.KHR_LIGHTS_PUNCTUAL ].light !== undefined ) {
-
-				pending.push( parser.getDependency( 'light', nodeDef.extensions[ EXTENSIONS.KHR_LIGHTS_PUNCTUAL ].light ) );
-
-			}
+			parser.invokeAll( ( ext ) => ext.extendNode && ext.extendNode( index, dependency ) ); // TODO await results
 
 			return Promise.all( pending );
 
