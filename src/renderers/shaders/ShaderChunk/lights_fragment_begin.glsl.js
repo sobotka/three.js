@@ -129,6 +129,12 @@ IncidentLight directLight;
 
 	irradiance += getLightProbeIrradiance( lightProbe, geometry );
 
+	#if defined( USE_INDIRECT_DIFFUSE_SH )
+
+		irradiance += getLightProbeIrradiance( indirectDiffuseSH, geometry );
+
+	#endif
+
 	#if ( NUM_HEMI_LIGHTS > 0 )
 
 		#pragma unroll_loop_start

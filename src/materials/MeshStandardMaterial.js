@@ -44,6 +44,8 @@ import { Color } from '../math/Color.js';
  *  envMap: new THREE.CubeTexture( [posx, negx, posy, negy, posz, negz] ),
  *  envMapIntensity: <float>
  *
+ *  indirectDiffuseSH: new THREE.SphericalHarmonics3(),
+ *
  *  refractionRatio: <float>,
  *
  *  wireframe: <boolean>,
@@ -98,6 +100,8 @@ function MeshStandardMaterial( parameters ) {
 
 	this.envMap = null;
 	this.envMapIntensity = 1.0;
+
+	this.indirectDiffuseSH = null;
 
 	this.refractionRatio = 0.98;
 

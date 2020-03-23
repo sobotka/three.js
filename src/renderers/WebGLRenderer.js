@@ -2042,6 +2042,18 @@ function WebGLRenderer( parameters ) {
 
 		}
 
+		if ( material.indirectDiffuseSH ) {
+
+			for ( var i = 0; i < 9; i ++ ) uniforms.indirectDiffuseSH.value[ i ].set( 0, 0, 0 );
+
+			for ( var j = 0; j < 9; j ++ ) {
+
+				uniforms.indirectDiffuseSH.value[ j ].add( material.indirectDiffuseSH.coefficients[ j ] );
+
+			}
+
+		}
+
 		// uv repeat and offset setting priorities
 		// 1. color map
 		// 2. specular map

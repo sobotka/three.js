@@ -482,6 +482,8 @@ function WebGLProgram( renderer, cacheKey, parameters ) {
 
 			parameters.flatShading ? '#define FLAT_SHADED' : '',
 
+			parameters.indirectDiffuseSH ? '#define USE_INDIRECT_DIFFUSE_SH' : '',
+
 			parameters.skinning ? '#define USE_SKINNING' : '',
 			parameters.useVertexTexture ? '#define BONE_TEXTURE' : '',
 
@@ -610,6 +612,8 @@ function WebGLProgram( renderer, cacheKey, parameters ) {
 			parameters.uvsVertexOnly ? '#define UVS_VERTEX_ONLY' : '',
 
 			parameters.gradientMap ? '#define USE_GRADIENTMAP' : '',
+
+			parameters.indirectDiffuseSH ? '#define USE_INDIRECT_DIFFUSE_SH' : '',
 
 			parameters.flatShading ? '#define FLAT_SHADED' : '',
 

@@ -49,7 +49,7 @@ function WebGLPrograms( renderer, extensions, capabilities ) {
 		"numDirLightShadows", "numPointLightShadows", "numSpotLightShadows",
 		"shadowMapEnabled", "shadowMapType", "toneMapping", 'physicallyCorrectLights',
 		"alphaTest", "doubleSided", "flipSided", "numClippingPlanes", "numClipIntersection", "depthPacking", "dithering",
-		"sheen"
+		"sheen", "indirectDiffuseSH"
 	];
 
 	function getShaderObject( material, shaderID ) {
@@ -233,6 +233,8 @@ function WebGLPrograms( renderer, extensions, capabilities ) {
 			fog: !! fog,
 			useFog: material.fog,
 			fogExp2: ( fog && fog.isFogExp2 ),
+
+			indirectDiffuseSH: material.indirectDiffuseSH,
 
 			flatShading: material.flatShading,
 

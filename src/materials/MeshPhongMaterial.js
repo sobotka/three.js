@@ -41,6 +41,7 @@ import { Color } from '../math/Color.js';
  *  alphaMap: new THREE.Texture( <Image> ),
  *
  *  envMap: new THREE.CubeTexture( [posx, negx, posy, negy, posz, negz] ),
+ *  indirectDiffuseSH: new THREE.SphericalHarmonics3(),
  *  combine: THREE.MultiplyOperation,
  *  reflectivity: <float>,
  *  refractionRatio: <float>,
@@ -92,6 +93,7 @@ function MeshPhongMaterial( parameters ) {
 	this.alphaMap = null;
 
 	this.envMap = null;
+	this.indirectDiffuseSH = null;
 	this.combine = MultiplyOperation;
 	this.reflectivity = 1;
 	this.refractionRatio = 0.98;
