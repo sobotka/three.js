@@ -56,24 +56,6 @@ function onDocumentLoad( event ) {
 
 	var text = document.body.innerHTML;
 
-	text = text.replace( /\[import:([\w]+) ([\w\.\s\/]+)\]/gi, `
-<h2>Import</h2>
-<p>
-	$1 is optional, and must be included in your project before use. For more information
-	about ES modules, see [link:#manual/introduction/Import-via-modules import via modules].
-</p>
-
-<div class="import-wrap">
-	<select>
-		<option value="npm" selected>npm</option>
-		<option value="script">script</option>
-	</select>
-	<code data-import="npm">import { $1 } from 'three/$2';</code></pre>
-	<code data-import="script" style="display: none;">&lt;script src="$1.js">&lt;/script></code></pre>
-	<a data-import="script" style="display: none;" href="https://three-unmodularize.now.sh/three/$2" target="_blank">Download</a>
-</div>
-` );
-
 	text = text.replace( /\[name\]/gi, name );
 	text = text.replace( /\[path\]/gi, path );
 	text = text.replace( /\[page:([\w\.]+)\]/gi, "[page:$1 $1]" ); // [page:name] to [page:name title]
@@ -84,6 +66,8 @@ function onDocumentLoad( event ) {
 	text = text.replace( /\[(member|property|method|param):([\w]+)\]/gi, "[$1:$2 $2]" ); // [member:name] to [member:name title]
 	text = text.replace( /\[(?:member|property|method):([\w]+) ([\w\.\s]+)\]\s*(\(.*\))?/gi, "<a onclick=\"window.parent.setUrlFragment('" + name + ".$2')\" target=\"_parent\" title=\"" + name + ".$2\" class=\"permalink\">#</a> .<a onclick=\"window.parent.setUrlFragment('" + name + ".$2')\" id=\"$2\">$2</a> $3 : <a class=\"param\" onclick=\"window.parent.setUrlFragment('$1')\">$1</a>" );
 	text = text.replace( /\[param:([\w\.]+) ([\w\.\s]+)\]/gi, "$2 : <a class=\"param\" onclick=\"window.parent.setUrlFragment('$1')\">$1</a>" ); // [param:name title]
+
+	text = text.replace( /\[import:([\w]+) ([\w\.\s\/]+)\]/gi, formatImportSelect );
 
 	text = text.replace( /\[link:([\w|\:|\/|\.|\-|\_]+)\]/gi, "[link:$1 $1]" ); // [link:url] to [link:url title]
 	text = text.replace( /\[link:([\w|\:|\/|\.|\-|\_|\(|\)|\?|\#|\=]+) ([\w|\:|\/|\.|\-|\_|\s]+)\]/gi, "<a href=\"$1\"  target=\"_blank\">$2</a>" ); // [link:url title]
@@ -176,6 +160,32 @@ function onDocumentLoad( event ) {
 			}
 
 		} );
+
+	}
+
+	function formatImportSelect ( _, name, modulePath ) {
+
+		var globalPath = modulePath.replace( 'examples/jsm/', 'examples/js/' );
+
+		return [
+
+			'<h2>Import</h2>',
+			'<p>',
+			'	' + name + ' is optional, and must be included in your project before use. For more information',
+			'	about ES modules, see [link:#manual/introduction/Import-via-modules import via modules].',
+			'</p>',
+			'',
+			'<div class="import-wrap">',
+			'	<select>',
+			'		<option value="npm" selected>npm</option>',
+			'		<option value="script">script</option>',
+			'	</select>',
+			'	<code data-import="npm">import { ' + name + ' } from \'three/' + modulePath + '\';</code></pre>',
+			'	<code data-import="script" style="display: none;">&lt;script src="' + name + '.js">&lt;/script></code></pre>',
+			'	<a data-import="script" style="display: none;" href="https://unpkg.com/three/' + globalPath + '" target="_blank">Download</a>',
+			'</div>',
+
+		].join( '\n' );
 
 	}
 

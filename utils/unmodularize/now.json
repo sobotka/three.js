@@ -1,8 +1,0 @@
-{
-	"routes": [
-		{
-			"src": "/(?<package>[^/]*)/(?<module>.*)",
-			"dest": "/api/unmodularize.js?package=$package&module=$module"
-		}
-	]
-}
