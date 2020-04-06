@@ -197,7 +197,7 @@ strong {
 	position: relative;
 }
 
-/* TODO: Duplicate styles in main.css. Needed here because page is inside the iframe */
+/* Duplicates styles in main.css. Needed here because page is inside the iframe */
 .import-wrap select {
 	position: absolute;
 	right: -22px;
@@ -239,9 +239,7 @@ strong {
 @media (prefers-color-scheme: dark) {
 
 	.import-wrap select {
-
 		background-color: #333333;
-
 	}
 
 }

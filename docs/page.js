@@ -150,11 +150,12 @@ function onDocumentLoad( event ) {
 
 		importSelect.addEventListener( 'change', function () {
 
-			var importBlocks = document.querySelectorAll( '.import-wrap [data-import]');
+			var importBlocks = document.querySelectorAll( '.import-wrap [data-import]' );
 
 			for ( var i = 0; i < importBlocks.length; i ++ ) {
 
 				var block = importBlocks[ i ];
+
 				block.style.display = block.getAttribute( 'data-import' ) === importSelect.value ? '' : 'none';
 
 			}
