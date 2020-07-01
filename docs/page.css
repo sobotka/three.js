@@ -226,6 +226,7 @@ strong {
 
 .import-wrap code {
 	padding-right: 80px;
+	white-space: pre;
 }
 
 .import-wrap a {
