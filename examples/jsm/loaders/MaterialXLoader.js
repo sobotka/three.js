@@ -1,10 +1,9 @@
 import {
 	Color,
-	Loader,
 	FileLoader,
+	Loader,
 	TextureLoader
 } from '../../../build/three.module.js';
-
 import * as Nodes from '../nodes/Nodes.js';
 
 class MaterialXLoader extends Loader {
@@ -19,19 +18,21 @@ class MaterialXLoader extends Loader {
 
 		const scope = this;
 
-		const loader = new FileLoader( scope.manager );
-		loader.setPath( scope.path );
-		loader.load( url, function ( text ) {
+		new FileLoader( scope.manager )
+			.setPath( scope.path )
+			.load( url, async function ( text ) {
 
-			console.time('MaterialXLoader.parse');
+				try {
 
-			const result = scope.parse( text );
+					onLoad( await scope.parseAsync( text ) );
 
-			console.timeEnd('MaterialXLoader.parse');
+				} catch ( e ) {
 
-			onLoad( result ); // TODO: Await dependencies.
+					onError( e );
 
-		}, onProgress, onError );
+				}
+
+			}, onProgress, onError );
 
 		return this;
 
@@ -39,7 +40,35 @@ class MaterialXLoader extends Loader {
 
 	parse( text ) {
 
-		return new MaterialXParser( this.manager, this.path ).parse( text );
+		const parser = new MaterialXParser( this.manager, this.path );
+
+		console.time('MaterialXLoader.parse');
+
+		const result = parser.parse( text );
+
+		console.timeEnd('MaterialXLoader.parse');
+
+		//
+
+		return result;
+
+	}
+
+	async parseAsync( text ) {
+
+		const parser = new MaterialXParser( this.manager, this.path );
+
+		console.time('MaterialXLoader.parse');
+
+		const result = parser.parse( text );
+
+		console.timeEnd('MaterialXLoader.parse');
+
+		//
+
+		await Promise.all( parser.pending );
+
+		return result;
 
 	}
 
@@ -60,6 +89,8 @@ class MaterialXParser {
 
 		this.nodeCache = new WeakMap();
 
+		this.pending = [];
+
 	}
 
 	parse( text ) {
@@ -67,7 +98,14 @@ class MaterialXParser {
 		const scope = this;
 		const dom = new DOMParser().parseFromString( text, 'application/xml' );
 
-		console.log( dom.documentElement );
+		const version = dom.documentElement.getAttribute( 'version' );
+		if ( version !== '1.38' ) {
+
+			console.warn( `THREE.MaterialXLoader: Expected MaterialX version v1.38, found v${version}.` );
+
+		}
+
+		console.log( dom.documentElement ); // TODO
 
 		const filePrefix = dom.documentElement.getAttribute( 'fileprefix' );
 		this.resourcePath = filePrefix ? new URL( filePrefix, this.path ).href : this.path;
@@ -114,6 +152,8 @@ class MaterialXParser {
 			materials[ material.name ] = material;
 
 		}
+
+		//
 
 		return { materials };
 
@@ -271,10 +311,7 @@ class MaterialXParser {
 
 			case 'tiledimage': {
 
-				this.beginResourceScope( nodeGraphName );
-				console.log('texture', inputs, nodeDef); // TODO: Include UVNode.
-				node = new Nodes.TextureNode( this.textureLoader.load( inputs.file ) );
-				this.endResourceScope( nodeGraphName );
+				node = this.parseTexture( nodeDef, nodeGraphName, inputs );
 
 			} break;
 
@@ -412,6 +449,25 @@ class MaterialXParser {
 		const type = inputDef.getAttribute( 'type' );
 		const value = inputDef.getAttribute( 'value' );
 		return formatValue( type, value );
+
+	}
+
+	parseTexture( nodeDef, nodeGraphName, inputs ) {
+
+		this.beginResourceScope( nodeGraphName );
+		console.log('texture', inputs, nodeDef ); // TODO: Include UVNode.
+
+		let texture;
+
+		this.pending.push( new Promise( ( resolve, reject ) => {
+
+			texture = this.textureLoader.load( inputs.file, resolve, undefined, reject );
+
+		} ) );
+
+		this.endResourceScope( nodeGraphName );
+
+		return new Nodes.TextureNode( texture );
 
 	}
 
