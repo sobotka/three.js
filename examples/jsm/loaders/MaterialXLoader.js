@@ -186,24 +186,51 @@ class MaterialXParser {
 
 		}
 
-		const material = this.parseStandardSurface( surfaceShaderDef );
+		//
+
+		let material;
+
+		if ( surfaceShaderDef.nodeName === 'standard_surface' ) {
+
+			material = this.parseStandardSurface( surfaceShaderDef );
+
+		} else if ( surfaceShaderDef.nodeName === 'disney_brdf_2012' ) {
+
+			material = this.parseDisneyBRDF2012( surfaceShaderDef );
+
+		} else if ( surfaceShaderDef.nodeName === 'disney_bsdf_2015' ) {
+
+			material = this.parseDisneyBRDF2015( surfaceShaderDef );
+
+		} else {
+
+			console.warn( `THREE.MaterialXLoader: Unsupported surface shader, "${ surfaceShaderDef.nodeName }".` );
+
+		}
+
 		material.name = materialName;
 
 		return material;
 
 	}
 
-	parseStandardSurface( standardSurfaceDef ) {
+	/**
+	 * Reference: https://github.com/materialx/MaterialX/blob/main/libraries/bxdf/standard_surface.mtlx
+	 */
+	parseStandardSurface( surfaceDef ) {
 
 		const material = new Nodes.MeshStandardNodeMaterial();
 
-		for ( const inputDef of standardSurfaceDef.children ) {
+		for ( const inputDef of surfaceDef.children ) {
 
 			switch ( inputDef.getAttribute( 'name' ) ) {
 
-				case 'base_color':
-					material.color = this.parseInput( inputDef );
-					break;
+				case 'base':
+				case 'base_color': {
+					material.color = ( material.color && material.color.isNode )
+						? new Nodes.OperatorNode( material.color, this.parseInput( inputDef ), Nodes.OperatorNode.MUL )
+						: this.parseInput( inputDef );
+				} break;
 
 				case 'opacity':
 					material.opacity = this.parseInput( inputDef );
@@ -218,14 +245,13 @@ class MaterialXParser {
 					material.metalness = this.parseInput( inputDef );
 					break;
 
+				case 'emission':
 				case 'emission_color': {
-					const emissionColor = this.parseInput( inputDef );
-					material.emissive = material.emissive
-						? Nodes.MultiplyNode( material.emissive, emissionColor )
-						: emissionColor;
+					material.emissive = ( material.emissive && material.emissive.isNode )
+						? new Nodes.OperatorNode( material.emissive, this.parseInput( inputDef ), Nodes.OperatorNode.MUL )
+						: this.parseInput( inputDef );
 				} break;
 
-				case 'base':
 				case 'specular':
 				case 'specular_color':
 				case 'specular_IOR':
@@ -257,7 +283,6 @@ class MaterialXParser {
 				case 'coat_affect_roughness':
 				case 'thin_film_thickness':
 				case 'thin_film_IOR':
-				case 'emission':
 
 					// TODO
 					console.warn( `THREE.MaterialXLoader: Unsupported material property, "${ inputDef.getAttribute( 'name' ) }".` );
@@ -269,6 +294,95 @@ class MaterialXParser {
 		return material;
 
 	}
+
+	/**
+	 * Reference: https://github.com/materialx/MaterialX/blob/main/libraries/bxdf/disney_brdf_2012.mtlx
+	 */
+	parseDisneyBRDF2012( surfaceDef ) {
+
+		const material = new Nodes.MeshStandardNodeMaterial();
+
+		for ( const inputDef of surfaceDef.children ) {
+
+			switch ( inputDef.getAttribute( 'name' ) ) {
+
+				case 'baseColor': // TODO: Default 0.16, 0.16, 0.16.
+					material.color = this.parseInput( inputDef );
+					break;
+
+				case 'metallic': // TODO: Default 0.
+					material.metalness = this.parseInput( inputDef );
+					break;
+
+				case 'roughness': // TODO: Default 0.5.
+					material.roughness = this.parseInput( inputDef );
+					break;
+
+				case 'subsurface': // TODO: Default 0.
+				case 'specular': // TODO: Default 0.5.
+				case 'specularTint': // TODO: Default 0.
+				case 'anisotropic': // TODO: Default 0.
+				case 'sheen': // TODO: Default 0.
+				case 'sheenTint': // TODO: Default 0.5.
+				case 'clearcoat': // TODO: Default 0.
+				case 'clearcoatGloss': // TODO: Default 1.
+
+					console.warn( `THREE.MaterialXLoader: Unsupported material property, "${ inputDef.getAttribute( 'name' ) }".` );
+
+			}
+
+		}
+
+		return material;
+
+	}
+
+	/**
+	 * Reference: https://github.com/materialx/MaterialX/blob/main/libraries/bxdf/disney_brdf_2015.mtlx
+	 */
+	parseDisneyBRDF2015( surfaceDef ) {
+
+		const material = new Nodes.MeshStandardNodeMaterial();
+
+		for ( const inputDef of surfaceDef.children ) {
+
+			switch ( inputDef.getAttribute( 'name' ) ) {
+
+				case 'baseColor': // TODO: Default 0.16, 0.16, 0.16.
+					material.color = this.parseInput( inputDef );
+					break;
+
+				case 'metallic': // TODO: Default 0.
+					material.metalness = this.parseInput( inputDef );
+					break;
+
+				case 'roughness': // TODO: Default 0.5.
+					material.roughness = this.parseInput( inputDef );
+					break;
+
+				case 'anisotropic': // TODO: Default 0.
+				case 'specularTint': // TODO: Default 0.
+				case 'sheen': // TODO: Default 0.
+				case 'sheenTint': // TODO: Default 0.5.
+				case 'clearcoat': // TODO: Default 0.
+				case 'clearcoatGloss': // TODO: Default 1.
+				case 'specTrans': // TODO: Default 0.
+				case 'ior': // TODO: Default 1.5.
+				case 'scatterDistance': // TODO: Default 0, 0, 0.
+				case 'flatness': // TODO: Default 0.
+				case 'diffTrans': // TODO: Default 0.
+				case 'thin': // TODO: Default false. (uniform)
+
+					console.warn( `THREE.MaterialXLoader: Unsupported material property, "${ inputDef.getAttribute( 'name' ) }".` );
+
+			}
+
+		}
+
+		return material;
+
+	}
+
 
 	parseNode( nodeDef, nodeGraphName ) {
 
@@ -407,6 +521,8 @@ class MaterialXParser {
 	}
 
 	parseInputs( nodeDef, nodeGraphName ) {
+
+		// TODO: Try to warn somehow if an input isn't used?
 
 		const inputs = {};
 
