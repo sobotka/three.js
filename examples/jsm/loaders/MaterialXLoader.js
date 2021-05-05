@@ -285,7 +285,7 @@ class MaterialXParser {
 				case 'thin_film_IOR':
 
 					// TODO
-					console.warn( `THREE.MaterialXLoader: Unsupported material property, "${ inputDef.getAttribute( 'name' ) }".` );
+					console.warn( `THREE.MaterialXLoader: Unsupported material input, "${ inputDef.getAttribute( 'name' ) }".` );
 
 			}
 
@@ -393,15 +393,18 @@ class MaterialXParser {
 
 		const inputs = this.parseInputs( nodeDef, nodeGraphName );
 
+		if ( inputs.disable ) {
+
+			// TODO: If node is disabled, skip other inputs.
+			return inputs.defaultinput || inputs.default;
+
+		}
+
+		//
+
 		switch ( nodeDef.nodeName ) {
 
 			// BASIC
-
-			case 'constant': {
-
-				node = inputs.value;
-
-			} break;
 
 			case 'output': {
 
@@ -412,94 +415,344 @@ class MaterialXParser {
 			} break;
 
 
+			// PROCEDURAL
+
+			case 'constant':
+
+				node = inputs.value;
+				break;
+
+			case 'ramplr':
+			case 'ramptb':
+			case 'splitlr':
+			case 'splittb':
+			case 'noise2d':
+			case 'noise3d':
+			case 'fractal3d':
+			case 'cellnoise2d':
+			case 'cellnoise3d':
+			case 'worleynoise2d':
+			case 'worleynoise3d':
+
+				console.warn( `THREE.MaterialXLoader: Unsupported procedural node, "${ nodeDef.nodeName }".` );
+				break;
+
+
 			// GEOMETRY
 
-			case 'position': {
+			case 'position':
 
-				node = new Nodes.PositionNode();
+				node = new Nodes.PositionNode( inputs.space === 'world' ? Nodes.PositionNode.WORLD : undefined );
+				break;
 
-			} break;
+			case 'normal':
+
+				node = new Nodes.NormalNode( inputs.space === 'world' ? Nodes.PositionNode.WORLD : undefined );
+				break;
+
+			case 'tangent':
+
+				node = new Nodes.AttributeNode( 'tangent', 'vec4' );
+				break;
+
+			case 'texcoord':
+
+				node = new Nodes.UVNode( inputs.index );
+				break;
+
+			case 'geomcolor':
+
+				node = new Nodes.ColorsNode( inputs.index )
+				break;
+
+			case 'geompropvalue':
+
+				node = new Nodes.AttributeNode( inputs.geomprop, /* TODO: type */ );
+				break;
+
+			case 'bitangent':
+
+				console.warn( `THREE.MaterialXLoader: Unsupported geometry node, "${ nodeDef.nodeName }".` );
+				break;
 
 
 			// TEXTURE
 
-			case 'tiledimage': {
+			case 'image':
+			case 'tiledimage':
 
 				node = this.parseTexture( nodeDef, nodeGraphName, inputs );
+				break;
 
-			} break;
+
+			// GLOBAL
+
+			case 'ambientocclusion':
+
+				console.warn( `THREE.MaterialXLoader: Unsupported global node, "${ nodeDef.nodeName }".` );
+				break;
+
+
+			// APPLICATION
+
+			case 'frame':
+			case 'time':
+			case 'viewdirection':
+			case 'updirection':
+
+				console.warn( `THREE.MaterialXLoader: Unsupported application node, "${ nodeDef.nodeName }".` );
+				break;
 
 
 			// MATH
 
-			case 'mix': {
-
-				node = new Nodes.MathNode( inputs.bg, inputs.fg, inputs.mix, Nodes.MathNode.MIX );
-
-			} break;
-
-
-			case 'dotproduct': {
-
-				node = new Nodes.MathNode( inputs.in1, inputs.in2, Nodes.MathNode.DOT );
-
-			} break;
-
-			case 'sin': {
-
-				node = new Nodes.MathNode( inputs.in, Nodes.MathNode.SIN );
-
-			} break;
-
-			case 'cos': {
-
-				node = new Nodes.MathNode( inputs.in, Nodes.MathNode.COS );
-
-			} break;
-
-			case 'power': {
-
-				node = new Nodes.MathNode( inputs.in1, inputs.in2, Nodes.MathNode.POW );
-
-			} break;
-
-
-			// OPERATOR
-
-			case 'multiply': {
+			case 'multiply':
 
 				node = new Nodes.OperatorNode( inputs.in1, inputs.in2, Nodes.OperatorNode.MUL );
+				break;
 
-			} break;
-
-			case 'divide': {
+			case 'divide':
 
 				node = new Nodes.OperatorNode( inputs.in1, inputs.in2, Nodes.OperatorNode.DIV );
+				break;
 
-			} break;
-
-			case 'add': {
+			case 'add':
 
 				node = new Nodes.OperatorNode( inputs.in1, inputs.in2, Nodes.OperatorNode.ADD );
+				break;
 
-			} break;
-
-			case 'subtract': {
+			case 'subtract':
 
 				node = new Nodes.OperatorNode( inputs.in1, inputs.in2, Nodes.OperatorNode.SUB );
+				break;
 
-			} break;
+			case 'modulo':
+
+				node = new Nodes.MathNode( inputs.in1, inputs.in2, Nodes.MathNode.MOD );
+				break;
+
+			case 'absval':
+
+				node = new Nodes.MathNode( inputs.in, Nodes.MathNode.ABS );
+				break;
+
+			case 'sign':
+
+				node = new Nodes.MathNode( inputs.in, Nodes.MathNode.SIGN );
+				break;
+
+			case 'floor':
+
+				node = new Nodes.MathNode( inputs.in, Nodes.MathNode.FLOOR );
+				break;
+
+			case 'ceil':
+
+				node = new Nodes.MathNode( inputs.in, Nodes.MathNode.CEIL );
+				break;
+
+			case 'round':
+
+				console.warn( `THREE.MaterialXLoader: Unsupported math node, "${ nodeDef.nodeName }".` );
+				break;
+
+			case 'power':
+
+				node = new Nodes.MathNode( inputs.in1, inputs.in2, Nodes.MathNode.POW );
+				break;
+
+			case 'sin':
+
+				node = new Nodes.MathNode( inputs.in, Nodes.MathNode.SIN );
+				break;
+
+			case 'cos':
+
+				node = new Nodes.MathNode( inputs.in, Nodes.MathNode.COS );
+				break;
+
+			case 'tan':
+
+				node = new Nodes.MathNode( inputs.in, Nodes.MathNode.TAN );
+				break;
+
+			case 'asin':
+
+				node = new Nodes.MathNode( inputs.in, Nodes.MathNode.ASIN );
+				break;
+
+			case 'acos':
+
+				node = new Nodes.MathNode( inputs.in, Nodes.MathNode.ACOS );
+				break;
+
+			case 'atan2':
+
+				// TODO: Does not quite match MathNode.ARCTAN.
+				console.warn( `THREE.MaterialXLoader: Unsupported math node, "${ nodeDef.nodeName }".` );
+				break;
+
+			case 'sqrt':
+
+				node = new Nodes.MathNode( inputs.in, Nodes.MathNode.SQRT );
+				break;
+
+			case 'ln':
+
+				node = new Nodes.MathNode( inputs.in, Nodes.MathNode.LOG );
+				break;
+
+			case 'exp':
+
+				node = new Nodes.MathNode( inputs.in, Nodes.MathNode.EXP );
+				break;
+
+			case 'clamp':
+
+				node = new Nodes.MathNode( inputs.in, inputs.low, inputs.high, Nodes.MathNode.CLAMP );
+				break;
+
+			case 'min':
+
+				node = new Nodes.MathNode( inputs.in1, inputs.in2, Nodes.MathNode.MIN );
+				break;
+
+			case 'max':
+
+				node = new Nodes.MathNode( inputs.in1, inputs.in2, Nodes.MathNode.MAX );
+				break;
+
+			case 'normalize':
+
+				node = new Nodes.MathNode( inputs.in, Nodes.MathNode.NORMALIZE );
+				break;
+
+			case 'magnitude':
+
+				console.warn( `THREE.MaterialXLoader: Unsupported math node, "${ nodeDef.nodeName }".` );
+				break;
+
+			case 'dotproduct':
+
+				node = new Nodes.MathNode( inputs.in1, inputs.in2, Nodes.MathNode.DOT );
+				break;
+
+			case 'crossproduct':
+			case 'transformpoint':
+			case 'transformvector':
+			case 'transformnormal':
+			case 'transformmatrix':
+			case 'normalmap':
+			case 'transpose':
+			case 'determinant':
+			case 'invertmatrix':
+			case 'rotate2d':
+			case 'rotate3d':
+			case 'arrayappend':
+			case 'dot':
+
+				console.warn( `THREE.MaterialXLoader: Unsupported math node, "${ nodeDef.nodeName }".` );
+				break;
 
 
-			// NOISE
+			// ADJUSTMENT
 
-			case 'fractal3d': {
+			case 'remap':
+			case 'smoothstep':
+			case 'curveadjust':
+			case 'curvelookup':
+			case 'luminance':
+			case 'rgbtohsv':
+			case 'hsvtorgb':
+			case 'contrast': // Supplemental.
+			case 'range': // Supplemental.
+			case 'saturate': // Supplemental.
+			case 'hsvadjust': // Supplemental.
 
-				// TODO: Use the right noise.
-				// TODO: Support 'parameters'.
-				node = new Nodes.NoiseNode( inputs.position );
+				console.warn( `THREE.MaterialXLoader: Unsupported adjustment node, "${ nodeDef.nodeName }".` );
+				break;
 
-			} break;
+
+			// COMPOSITING
+
+			case 'premult':
+			case 'unpremult':
+			case 'plus':
+			case 'minus':
+			case 'difference':
+			case 'burn':
+			case 'dodge':
+			case 'screen':
+			case 'overlay':
+
+				console.warn( `THREE.MaterialXLoader: Unsupported blend node, "${ nodeDef.nodeName }".` );
+				break;
+
+			case 'disjointover':
+			case 'in':
+			case 'mask':
+			case 'matte':
+			case 'out':
+			case 'over':
+
+				console.warn( `THREE.MaterialXLoader: Unsupported merge node, "${ nodeDef.nodeName }".` );
+				break;
+
+			case 'inside':
+			case 'outside':
+
+				console.warn( `THREE.MaterialXLoader: Unsupported masking node, "${ nodeDef.nodeName }".` );
+				break;
+
+			case 'mix':
+
+				node = new Nodes.MathNode( inputs.bg, inputs.fg, inputs.mix, Nodes.MathNode.MIX );
+				break;
+
+
+			// CONDITIONAL
+
+			case 'ifgreater':
+
+				node = new Nodes.CondNode( inputs.value1, inputs.value2, inputs.in1, inputs.in2, Nodes.CondNode.GREATER );
+				break;
+
+			case 'ifgreatereq':
+
+				node = new Nodes.CondNode( inputs.value1, inputs.value2, inputs.in1, inputs.in2, Nodes.CondNode.GREATER_EQUAL );
+				break;
+
+			case 'ifequal':
+
+				node = new Nodes.CondNode( inputs.value1, inputs.value2, inputs.in1, inputs.in2, Nodes.CondNode.EQUAL );
+				break;
+
+			case 'switch':
+
+				console.warn( `THREE.MaterialXLoader: Unsupported conditional node, "${ nodeDef.nodeName }".` );
+				break;
+
+
+			// CHANNEL
+
+			case 'convert':
+			case 'swizzle':
+			case 'combine2':
+			case 'combine3':
+			case 'combine4':
+
+				console.warn( `THREE.MaterialXLoader: Unsupported channel node, "${ nodeDef.nodeName }".` );
+				break;
+
+
+			// CONVOLUTION
+
+			case 'blur':
+			case 'heighttonormal':
+
+				console.warn( `THREE.MaterialXLoader: Unsupported convolution node, "${ nodeDef.nodeName }".` );
+				break;
+
 
 		}
 
@@ -583,7 +836,31 @@ class MaterialXParser {
 
 		this.endResourceScope( nodeGraphName );
 
-		return new Nodes.TextureNode( texture );
+		const textureNode = new Nodes.TextureNode( texture );
+
+		for ( const inputName in inputs ) {
+
+			const inputDef = inputs[ inputName ];
+
+			switch ( inputName ) {
+
+				case 'texcoord':
+
+					textureNode.uv = inputs.texcoord;
+					break;
+
+				case 'uvtiling':
+				case 'uaddressmode':
+				case 'vaddressmode':
+				case 'default':
+				case 'layer':
+
+					console.warn( `THREE.MaterialXLoader: Unsupported texture input, "${ inputName }".` );
+
+			}
+		}
+
+		return textureNode;
 
 	}
 
@@ -658,6 +935,10 @@ function formatValue( type, value ) {
 		case 'color3':
 
 			return new Nodes.ColorNode( new Color( ... split( value ) ) );
+
+		case 'color4':
+
+			return new Nodes.Vector4Node( ... split( value ) );
 
 		case 'filename':
 
