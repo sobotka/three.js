@@ -7,8 +7,6 @@ import {
 
 import * as Nodes from '../nodes/Nodes.js';
 
-console.log( Nodes );
-
 class MaterialXLoader extends Loader {
 
 	constructor( manager ) {
@@ -25,7 +23,13 @@ class MaterialXLoader extends Loader {
 		loader.setPath( scope.path );
 		loader.load( url, function ( text ) {
 
-			onLoad( scope.parse( text ) );
+			console.time('MaterialXLoader.parse');
+
+			const result = scope.parse( text );
+
+			console.timeEnd('MaterialXLoader.parse');
+
+			onLoad( result ); // TODO: Await dependencies.
 
 		}, onProgress, onError );
 
