@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - MaterialX loader</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link type="text/css" rel="stylesheet" href="main.css">
+		<style>
+			.dg .property-name {
+				width: 20% !important;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="info">
+			<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> - MaterialXLoader<br />
+			{SAMPLE NAME}
+			<!-- <a href="https://sketchfab.com/theblueturtle_" target="_blank" rel="noopener">theblueturtle_</a><br />
+			<a href="https://hdrihaven.com/hdri/?h=royal_esplanade" target="_blank" rel="noopener">Royal Esplanade</a> by <a href="https://hdrihaven.com/" target="_blank" rel="noopener">HDRI Haven</a> -->
+		</div>
+
+		<script type="module">
+
+			import * as THREE from '../build/three.module.js';
+
+			import { MaterialXLoader } from './jsm/loaders/MaterialXLoader.js';
+			import { OrbitControls } from './jsm/controls/OrbitControls.js';
+			import { RGBELoader } from './jsm/loaders/RGBELoader.js';
+			import { GUI } from './jsm/libs/dat.gui.module.js';
+
+			const SAMPLE_PATH = 'https://raw.githubusercontent.com/materialx/MaterialX/main/resources/Materials/Examples/StandardSurface/';
+
+			const SAMPLES = [
+
+				'standard_surface_brass_tiled.mtlx',
+				'standard_surface_carpaint.mtlx',
+				'standard_surface_chrome.mtlx',
+				'standard_surface_copper.mtlx',
+				'standard_surface_default.mtlx',
+				'standard_surface_glass.mtlx',
+				'standard_surface_gold.mtlx',
+				'standard_surface_greysphere.mtlx',
+				'standard_surface_greysphere_calibration.mtlx',
+				'standard_surface_jade.mtlx',
+				'standard_surface_look_brass_tiled.mtlx',
+				'standard_surface_look_wood_tiled.mtlx',
+				'standard_surface_marble_solid.mtlx',
+				'standard_surface_metal_brushed.mtlx',
+				'standard_surface_plastic.mtlx',
+				'standard_surface_thin_film.mtlx',
+				'standard_surface_velvet.mtlx',
+				'standard_surface_wood_tiled.mtlx'
+
+			];
+
+			const api = {
+
+				sample: 'standard_surface_wood_tiled.mtlx'
+
+			};
+
+			let camera, scene, renderer, envMap;
+
+			init();
+			render();
+
+			function init() {
+
+				const container = document.createElement( 'div' );
+				document.body.appendChild( container );
+
+				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.25, 20 );
+				camera.position.set( - 1.8, 0.6, 2.7 );
+
+				scene = new THREE.Scene();
+
+				const gui = new GUI( { width: 400 } );
+
+				gui.add( api, 'sample' ).options( SAMPLES ).onFinishChange( onSampleChange );
+
+				new RGBELoader()
+					.setDataType( THREE.UnsignedByteType )
+					.setPath( 'textures/equirectangular/' )
+					.load( 'royal_esplanade_1k.hdr', function ( texture ) {
+
+						envMap = pmremGenerator.fromEquirectangular( texture ).texture;
+
+						scene.background = new THREE.Color( 0xE0E0E0 );
+						scene.environment = envMap;
+
+						texture.dispose();
+						pmremGenerator.dispose();
+
+						onSampleChange();
+						render();
+
+					} );
+
+				renderer = new THREE.WebGLRenderer( { antialias: true } );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.toneMapping = THREE.ACESFilmicToneMapping;
+				renderer.toneMappingExposure = 1;
+				renderer.outputEncoding = THREE.sRGBEncoding;
+				container.appendChild( renderer.domElement );
+
+				const pmremGenerator = new THREE.PMREMGenerator( renderer );
+				pmremGenerator.compileEquirectangularShader();
+
+				const controls = new OrbitControls( camera, renderer.domElement );
+				controls.addEventListener( 'change', render ); // use if there is no animation loop
+				controls.minDistance = 2;
+				controls.maxDistance = 10;
+				controls.update();
+
+				window.addEventListener( 'resize', onWindowResize );
+
+			}
+
+			function onSampleChange() {
+
+				new MaterialXLoader()
+					.setPath( SAMPLE_PATH )
+					.load( api.sample, function ( result ) {
+
+						console.log( 'result: ', result );
+
+						const material = Object.values( result.materials ).pop();
+
+						material.envMap = envMap;
+
+						window.material = material; // TODO
+
+						const model = new THREE.Mesh( new THREE.SphereBufferGeometry( 1, 64, 32 ), material );
+
+						scene.add( model );
+
+						render();
+
+					}, undefined, function ( error ) {
+
+						console.error( error );
+
+					} );
+
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				render();
+
+			}
+
+			//
+
+			function render() {
+
+				renderer.render( scene, camera );
+
+			}
+
+		</script>
+
+	</body>
+</html>
