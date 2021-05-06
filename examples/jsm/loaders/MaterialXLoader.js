@@ -664,6 +664,17 @@ class MaterialXParser {
 			// ADJUSTMENT
 
 			case 'remap':
+
+				// TODO: Defaults should match type of given parameters.
+				node = new Nodes.RemapNode(
+					inputs.in,
+					inputs.inlow || new Nodes.FloatNode( 0 ),
+					inputs.inhigh || new Nodes.FloatNode( 1 ),
+					inputs.outlow || new Nodes.FloatNode( 0 ),
+					inputs.outhigh || new Nodes.FloatNode( 1 ),
+				);
+				break;
+
 			case 'smoothstep':
 			case 'curveadjust':
 			case 'curvelookup':
@@ -754,11 +765,15 @@ class MaterialXParser {
 			// CONVOLUTION
 
 			case 'blur':
-			case 'heighttonormal':
 
 				console.warn( `THREE.MaterialXLoader: Unsupported convolution node, "${ nodeDef.nodeName }".` );
 				break;
 
+			case 'heighttonormal':
+
+				node = new Nodes.BumpMapNode( inputs.in, inputs.scale );
+				node.toNormalMap = true;
+				break;
 
 		}
 
