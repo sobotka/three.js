@@ -383,7 +383,13 @@ class MaterialXParser {
 
 	}
 
-
+	/**
+	 * Reference:
+	 * - https://github.com/materialx/MaterialX/tree/main/libraries/stdlib/osl
+	 * - https://github.com/materialx/MaterialX/blob/main/libraries/stdlib/osl/mx_funcs.h
+	 * - https://github.com/donmccurdy/three-shadenodeloader/tree/master/nodes
+	 * - https://www.materialx.org/assets/MaterialX.v1.38D1.Spec.pdf
+	 */
 	parseNode( nodeDef, nodeGraphName ) {
 
 		let node = this.nodeCache.get( nodeDef );
@@ -840,13 +846,13 @@ class MaterialXParser {
 
 		for ( const inputName in inputs ) {
 
-			const inputDef = inputs[ inputName ];
+			const inputValue = inputs[ inputName ];
 
 			switch ( inputName ) {
 
 				case 'texcoord':
 
-					textureNode.uv = inputs.texcoord;
+					textureNode.uv = inputValue;
 					break;
 
 				case 'uvtiling':
