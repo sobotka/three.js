@@ -117,11 +117,8 @@
 
 					new MaterialXLoader()
 						.setPath( SAMPLE_PATH )
-						.loadAsync( 'standard_surface_greysphere.mtlx' )
-						.then( ( result ) => {
-							console.log(result);
-							return Object.values( result.materials ).pop();
-						} )
+						.loadAsync( 'standard_surface_greysphere_calibration.mtlx' )
+						.then( ( { materials } ) => Object.values( materials ).pop() )
 
 				] );
 
@@ -154,7 +151,7 @@
 						const material = Object.values( result.materials ).pop();
 
 						// TODO: Clean up.
-						console.log( 'result: ', result );
+						console.log( 'MaterialXLoader result: ', result );
 						window.material = material;
 
 						const previewMesh = model.getObjectByName( 'Preview_Mesh' );

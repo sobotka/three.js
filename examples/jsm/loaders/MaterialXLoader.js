@@ -2,9 +2,19 @@ import {
 	Color,
 	FileLoader,
 	Loader,
-	TextureLoader
+	TextureLoader,
+	RepeatWrapping,
+	ClampToEdgeWrapping,
+	MirroredRepeatWrapping,
 } from '../../../build/three.module.js';
 import * as Nodes from '../nodes/Nodes.js';
+
+const UV_ADDRESS_MODE = {
+	constant: ClampToEdgeWrapping, // TODO: Incorrect.
+	clamp: ClampToEdgeWrapping,
+	periodic: RepeatWrapping,
+	mirror: MirroredRepeatWrapping
+}
 
 class MaterialXLoader extends Loader {
 
@@ -389,6 +399,7 @@ class MaterialXParser {
 	 * - https://github.com/materialx/MaterialX/blob/main/libraries/stdlib/osl/mx_funcs.h
 	 * - https://github.com/donmccurdy/three-shadenodeloader/tree/master/nodes
 	 * - https://www.materialx.org/assets/MaterialX.v1.38D1.Spec.pdf
+	 * - https://www.materialx.org/assets/MaterialX.v1.38.Supplement.pdf
 	 */
 	parseNode( nodeDef, nodeGraphName ) {
 
@@ -489,6 +500,22 @@ class MaterialXParser {
 
 				node = this.parseTexture( nodeDef, nodeGraphName, inputs );
 				break;
+
+			case 'place2d': {
+
+				// TODO: UVTransformNode does not accept offset/scale/rotate/pivot inputs.
+				node = new Nodes.UVTransformNode( inputs.texcoord );
+				node.setUvTransform(
+					inputs.offset instanceof Nodes.Vector2Node ? inputs.offset.value.x : 0,
+					inputs.offset instanceof Nodes.Vector2Node ? inputs.offset.value.y : 0,
+					inputs.scale instanceof Nodes.Vector2Node ? inputs.scale.value.x : 1,
+					inputs.scale instanceof Nodes.Vector2Node ? inputs.scale.value.y : 1,
+					inputs.rotate instanceof Nodes.FloatNode ? inputs.rotate.value : 0,
+					inputs.pivot instanceof Nodes.Vector2Node ? inputs.pivot.value.x : 0,
+					inputs.pivot instanceof Nodes.Vector2Node ? inputs.pivot.value.y : 0
+				);
+
+			} break;
 
 
 			// GLOBAL
@@ -852,6 +879,7 @@ class MaterialXParser {
 		this.pending.push( new Promise( ( resolve, reject ) => {
 
 			texture = this.textureLoader.load( inputs.file, resolve, undefined, reject );
+			texture.wrapS = texture.wrapT = RepeatWrapping;
 
 		} ) );
 
@@ -870,9 +898,18 @@ class MaterialXParser {
 					textureNode.uv = inputValue;
 					break;
 
-				case 'uvtiling':
 				case 'uaddressmode':
+					texture.wrapS = UV_ADDRESS_MODE[ inputValue ];
+					break;
+
 				case 'vaddressmode':
+					texture.wrapT = UV_ADDRESS_MODE[ inputValue ];
+					break;
+
+				case 'uvtiling':
+					textureNode.uv = new Nodes.OperatorNode( textureNode.uv, inputValue, Nodes.OperatorNode.MUL );
+					break;
+
 				case 'default':
 				case 'layer':
 
@@ -961,6 +998,7 @@ function formatValue( type, value ) {
 
 			return new Nodes.Vector4Node( ... split( value ) );
 
+		case 'string':
 		case 'filename':
 
 			return value;
