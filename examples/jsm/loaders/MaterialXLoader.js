@@ -16,6 +16,14 @@ const UV_ADDRESS_MODE = {
 	mirror: MirroredRepeatWrapping
 }
 
+const SUPPORTED_SURFACE_SHADERS = [
+	'standard_surface',
+	'disney_brdf_2012',
+	'disney_brdf_2015',
+];
+
+const SUPPORTED_DISPLACEMENT_SHADERS = [];
+
 class MaterialXLoader extends Loader {
 
 	constructor( manager ) {
@@ -50,17 +58,7 @@ class MaterialXLoader extends Loader {
 
 	parse( text ) {
 
-		const parser = new MaterialXParser( this.manager, this.path );
-
-		console.time('MaterialXLoader.parse');
-
-		const result = parser.parse( text );
-
-		console.timeEnd('MaterialXLoader.parse');
-
-		//
-
-		return result;
+		return new MaterialXParser( this.manager, this.path ).parse( text );
 
 	}
 
@@ -70,9 +68,17 @@ class MaterialXLoader extends Loader {
 
 		console.time('MaterialXLoader.parse');
 
-		const result = parser.parse( text );
+		let result;
 
-		console.timeEnd('MaterialXLoader.parse');
+		try {
+
+			result = parser.parse( text );
+
+		} finally {
+
+			console.timeEnd('MaterialXLoader.parse');
+
+		}
 
 		//
 
@@ -96,6 +102,7 @@ class MaterialXParser {
 
 		this.nodeGraphDefs = {};
 		this.surfaceShaderDefs = {};
+		this.displacementShaderDefs = {};
 
 		this.nodeCache = new WeakMap();
 
@@ -139,6 +146,10 @@ class MaterialXParser {
 
 				this.surfaceShaderDefs[ name ] = nodeDef;
 
+			} else if ( nodeName === 'displacementshader' ) {
+
+				this.displacementShaderDefs[ name ] = nodeDef;
+
 			} else if ( nodeName === 'nodegraph' ) {
 
 				this.nodeGraphDefs[ name ] = nodeDef;
@@ -174,18 +185,30 @@ class MaterialXParser {
 		const materialName = surfaceMaterialDef.getAttribute( 'name' );
 
 		let surfaceShaderDef;
+		let displacementShaderDef;
 
 		for ( const inputDef of surfaceMaterialDef.children ) {
 
-			// Only support surface shaders.
-			if ( inputDef.getAttribute( 'type' ) !== 'surfaceshader' ) continue;
+			const inputType = inputDef.getAttribute( 'type' );
+			const inputName = inputDef.getAttribute( 'nodename' );
 
-			// Only support Standard Surface BRDF.
-			const nodeDef = this.surfaceShaderDefs[ inputDef.getAttribute( 'nodename' ) ]
-			if ( nodeDef.nodeName !== 'standard_surface' ) continue;
+			if ( inputType === 'surfaceshader' ) {
 
-			surfaceShaderDef = nodeDef;
-			break;
+				const nodeDef = this.surfaceShaderDefs[ inputName ];
+
+				if ( ! SUPPORTED_SURFACE_SHADERS.includes( nodeDef.nodeName ) ) continue;
+
+				surfaceShaderDef = nodeDef;
+
+			} else if ( inputType === 'displacementshader' ) {
+
+				const nodeDef = this.displacementShaderDefs[ inputName ];
+
+				if ( ! SUPPORTED_DISPLACEMENT_SHADERS.includes( nodeDef.nodeName ) ) continue;
+
+				displacementShaderDef = nodeDef;
+
+			}
 
 		}
 
@@ -208,13 +231,22 @@ class MaterialXParser {
 
 			material = this.parseDisneyBRDF2012( surfaceShaderDef );
 
-		} else if ( surfaceShaderDef.nodeName === 'disney_bsdf_2015' ) {
+		} else if ( surfaceShaderDef.nodeName === 'disney_brdf_2012' ) {
 
 			material = this.parseDisneyBRDF2015( surfaceShaderDef );
 
 		} else {
 
 			console.warn( `THREE.MaterialXLoader: Unsupported surface shader, "${ surfaceShaderDef.nodeName }".` );
+			return null;
+
+		}
+
+		if ( displacementShaderDef ) {
+
+			// material.position = ...
+			// material.normal = ...
+			console.warn( `THREE.MaterialXLoader: Displacement shader not yet implemented.` );
 
 		}
 
@@ -880,6 +912,7 @@ class MaterialXParser {
 
 			texture = this.textureLoader.load( inputs.file, resolve, undefined, reject );
 			texture.wrapS = texture.wrapT = RepeatWrapping;
+			texture.flipY = false;
 
 		} ) );
 
