@@ -476,13 +476,31 @@ class MaterialXParser {
 				node = inputs.value;
 				break;
 
+			case 'noise2d':
+
+				node = new Nodes.Noise2DNode( inputs.texcoord, inputs.amplitude, inputs.pivot );
+				break;
+
+			case 'noise3d':
+
+				node = new Nodes.Noise3DNode( inputs.position, inputs.amplitude, inputs.pivot );
+				break;
+
+			case 'fractal3d':
+
+				node = new Nodes.Fractal3DNode(
+					inputs.position,
+					inputs.amplitude,
+					inputs.octaves ? inputs.octaves.value : undefined,
+					inputs.lacunarity ? inputs.lacunarity.value : undefined,
+					inputs.diminish ? inputs.diminish.value : undefined
+				);
+				break;
+
 			case 'ramplr':
 			case 'ramptb':
 			case 'splitlr':
 			case 'splittb':
-			case 'noise2d':
-			case 'noise3d':
-			case 'fractal3d':
 			case 'cellnoise2d':
 			case 'cellnoise3d':
 			case 'worleynoise2d':
