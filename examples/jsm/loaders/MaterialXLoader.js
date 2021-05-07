@@ -263,6 +263,11 @@ class MaterialXParser {
 
 		const material = new Nodes.MeshStandardNodeMaterial();
 
+		material.color.set( 0.8, 0.8, 0.8 );
+		material.roughness = 0.2;
+		material.metalness = 0;
+		material.opacity = 1;
+
 		for ( const inputDef of surfaceDef.children ) {
 
 			switch ( inputDef.getAttribute( 'name' ) ) {
@@ -278,7 +283,6 @@ class MaterialXParser {
 					material.opacity = this.parseInput( inputDef );
 					break;
 
-				case 'diffuse_roughness':
 				case 'specular_roughness':
 					material.roughness = this.parseInput( inputDef );
 					break;
@@ -294,6 +298,7 @@ class MaterialXParser {
 						: this.parseInput( inputDef );
 				} break;
 
+				case 'diffuse_roughness':
 				case 'specular':
 				case 'specular_color':
 				case 'specular_IOR':
