@@ -122,7 +122,7 @@ class MaterialXParser {
 
 		}
 
-		console.log( dom.documentElement ); // TODO
+		console.log( dom.documentElement ); // TODO: Clean up.
 
 		const filePrefix = dom.documentElement.getAttribute( 'fileprefix' );
 		this.resourcePath = filePrefix ? new URL( filePrefix, this.path ).href : this.path;
@@ -331,7 +331,6 @@ class MaterialXParser {
 				case 'thin_film_thickness':
 				case 'thin_film_IOR':
 
-					// TODO
 					console.warn( `THREE.MaterialXLoader: Unsupported material input, "${ inputDef.getAttribute( 'name' ) }".` );
 
 			}
@@ -365,14 +364,14 @@ class MaterialXParser {
 					material.roughness = this.parseInput( inputDef );
 					break;
 
-				case 'subsurface': // TODO: Default 0.
-				case 'specular': // TODO: Default 0.5.
-				case 'specularTint': // TODO: Default 0.
-				case 'anisotropic': // TODO: Default 0.
-				case 'sheen': // TODO: Default 0.
-				case 'sheenTint': // TODO: Default 0.5.
-				case 'clearcoat': // TODO: Default 0.
-				case 'clearcoatGloss': // TODO: Default 1.
+				case 'subsurface': // Default 0.
+				case 'specular': // Default 0.5.
+				case 'specularTint': // Default 0.
+				case 'anisotropic': // Default 0.
+				case 'sheen': // Default 0.
+				case 'sheenTint': // Default 0.5.
+				case 'clearcoat': // Default 0.
+				case 'clearcoatGloss': // Default 1.
 
 					console.warn( `THREE.MaterialXLoader: Unsupported material property, "${ inputDef.getAttribute( 'name' ) }".` );
 
@@ -407,18 +406,18 @@ class MaterialXParser {
 					material.roughness = this.parseInput( inputDef );
 					break;
 
-				case 'anisotropic': // TODO: Default 0.
-				case 'specularTint': // TODO: Default 0.
-				case 'sheen': // TODO: Default 0.
-				case 'sheenTint': // TODO: Default 0.5.
-				case 'clearcoat': // TODO: Default 0.
-				case 'clearcoatGloss': // TODO: Default 1.
-				case 'specTrans': // TODO: Default 0.
-				case 'ior': // TODO: Default 1.5.
-				case 'scatterDistance': // TODO: Default 0, 0, 0.
-				case 'flatness': // TODO: Default 0.
-				case 'diffTrans': // TODO: Default 0.
-				case 'thin': // TODO: Default false. (uniform)
+				case 'anisotropic': // Default 0.
+				case 'specularTint': // Default 0.
+				case 'sheen': // Default 0.
+				case 'sheenTint': // Default 0.5.
+				case 'clearcoat': // Default 0.
+				case 'clearcoatGloss': // Default 1.
+				case 'specTrans': // Default 0.
+				case 'ior': // Default 1.5.
+				case 'scatterDistance': // Default 0, 0, 0.
+				case 'flatness': // Default 0.
+				case 'diffTrans': // Default 0.
+				case 'thin': // Default false. (uniform)
 
 					console.warn( `THREE.MaterialXLoader: Unsupported material property, "${ inputDef.getAttribute( 'name' ) }".` );
 
@@ -498,9 +497,47 @@ class MaterialXParser {
 				break;
 
 			case 'ramplr':
+
+				node = new Nodes.MathNode(
+					inputs.valuel,
+					inputs.valuer,
+					new Nodes.SwitchNode( inputs.texcoord || new Nodes.UVNode(), 'x' ),
+					Nodes.MathNode.MIX
+				);
+				break;
+
 			case 'ramptb':
+
+				node = new Nodes.MathNode(
+					inputs.valueb,
+					inputs.valuet,
+					new Nodes.SwitchNode( inputs.texcoord || new Nodes.UVNode(), 'y' ),
+					Nodes.MathNode.MIX
+				);
+				break;
+
 			case 'splitlr':
+
+				node = new Nodes.CondNode(
+					new Nodes.SwitchNode( inputs.texcoord || new Nodes.UVNode(), 'x' ),
+					inputs.center || new Nodes.FloatNode( 0.5 ).setReadonly( true ),
+					Nodes.CondNode.LESS,
+					inputs.valuel,
+					inputs.valuer
+				);
+				break;
+
 			case 'splittb':
+
+				node = new Nodes.CondNode(
+					new Nodes.SwitchNode( inputs.texcoord || new Nodes.UVNode(), 'y' ),
+					inputs.center || new Nodes.FloatNode( 0.5 ).setReadonly( true ),
+					Nodes.CondNode.LESS,
+					inputs.valueb,
+					inputs.valuet
+				);
+				break;
+
 			case 'cellnoise2d':
 			case 'cellnoise3d':
 			case 'worleynoise2d':
@@ -559,6 +596,7 @@ class MaterialXParser {
 			case 'place2d': {
 
 				// TODO: UVTransformNode does not accept offset/scale/rotate/pivot inputs.
+				// TODO: Calibration material not working.
 				node = new Nodes.UVTransformNode( inputs.texcoord );
 				node.setUvTransform(
 					inputs.offset instanceof Nodes.Vector2Node ? inputs.offset.value.x : 0,
@@ -725,6 +763,10 @@ class MaterialXParser {
 				node = new Nodes.MathNode( inputs.in1, inputs.in2, Nodes.MathNode.DOT );
 				break;
 
+			case 'dot':
+				node = inputs.in;
+				break;
+
 			case 'crossproduct':
 			case 'transformpoint':
 			case 'transformvector':
@@ -737,7 +779,6 @@ class MaterialXParser {
 			case 'rotate2d':
 			case 'rotate3d':
 			case 'arrayappend':
-			case 'dot':
 
 				console.warn( `THREE.MaterialXLoader: Unsupported math node, "${ nodeDef.nodeName }".` );
 				break;
@@ -869,6 +910,8 @@ class MaterialXParser {
 
 		}
 
+		node.name = nodeDef.getAttribute( 'name' );
+
 		//
 
 		this.nodeCache.set( nodeDef, node );
@@ -877,8 +920,6 @@ class MaterialXParser {
 	}
 
 	parseInputs( nodeDef, nodeGraphName ) {
-
-		// TODO: Try to warn somehow if an input isn't used?
 
 		const inputs = {};
 
@@ -927,7 +968,6 @@ class MaterialXParser {
 	parseTexture( nodeDef, nodeGraphName, inputs ) {
 
 		this.beginResourceScope( nodeGraphName );
-		console.log('texture', inputs, nodeDef ); // TODO: Include UVNode.
 
 		let texture;
 
