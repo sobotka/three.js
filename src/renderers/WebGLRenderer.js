@@ -1936,11 +1936,33 @@ function WebGLRenderer( parameters = {} ) {
 
 		}
 
+<<<<<<< Updated upstream
 		state.viewport( _currentViewport );
 		state.scissor( _currentScissor );
 		state.setScissorTest( _currentScissorTest );
 
 		if ( isCube ) {
+=======
+		if ( material.indirectDiffuseSH ) {
+
+			for ( var i = 0; i < 9; i ++ ) uniforms.indirectDiffuseSH.value[ i ].set( 0, 0, 0 );
+
+			for ( var j = 0; j < 9; j ++ ) {
+
+				uniforms.indirectDiffuseSH.value[ j ].add( material.indirectDiffuseSH.coefficients[ j ] );
+
+			}
+
+		}
+
+		// uv repeat and offset setting priorities
+		// 1. color map
+		// 2. specular map
+		// 3. normal map
+		// 4. bump map
+		// 5. alpha map
+		// 6. emissive map
+>>>>>>> Stashed changes
 
 			const textureProperties = properties.get( renderTarget.texture );
 			_gl.framebufferTexture2D( _gl.FRAMEBUFFER, _gl.COLOR_ATTACHMENT0, _gl.TEXTURE_CUBE_MAP_POSITIVE_X + activeCubeFace, textureProperties.__webglTexture, activeMipmapLevel );

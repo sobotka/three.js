@@ -33,6 +33,7 @@ function WebGLPrograms( renderer, cubemaps, extensions, capabilities, bindingSta
 		SpriteMaterial: 'sprite'
 	};
 
+<<<<<<< Updated upstream
 	const parameterNames = [
 		'precision', 'isWebGL2', 'supportsVertexTextures', 'outputEncoding', 'instancing', 'instancingColor',
 		'map', 'mapEncoding', 'matcap', 'matcapEncoding', 'envMap', 'envMapMode', 'envMapEncoding', 'envMapCubeUV',
@@ -46,6 +47,22 @@ function WebGLPrograms( renderer, cubemaps, extensions, capabilities, bindingSta
 		'shadowMapEnabled', 'shadowMapType', 'toneMapping', 'physicallyCorrectLights',
 		'alphaTest', 'doubleSided', 'flipSided', 'numClippingPlanes', 'numClipIntersection', 'depthPacking', 'dithering',
 		'sheen', 'transmission', 'transmissionMap', 'thicknessMap'
+=======
+	var parameterNames = [
+		"precision", "isWebGL2", "supportsVertexTextures", "outputEncoding", "instancing", "numMultiviewViews",
+		"map", "mapEncoding", "matcap", "matcapEncoding", "envMap", "envMapMode", "envMapEncoding", "envMapCubeUV",
+		"lightMap", "lightMapEncoding", "aoMap", "emissiveMap", "emissiveMapEncoding", "bumpMap", "normalMap", "objectSpaceNormalMap", "tangentSpaceNormalMap", "clearcoatNormalMap", "displacementMap", "specularMap",
+		"roughnessMap", "metalnessMap", "gradientMap",
+		"alphaMap", "combine", "vertexColors", "vertexTangents", "vertexUvs", "uvsVertexOnly", "fog", "useFog", "fogExp2",
+		"flatShading", "sizeAttenuation", "logarithmicDepthBuffer", "skinning",
+		"maxBones", "useVertexTexture", "morphTargets", "morphNormals",
+		"maxMorphTargets", "maxMorphNormals", "premultipliedAlpha",
+		"numDirLights", "numPointLights", "numSpotLights", "numHemiLights", "numRectAreaLights",
+		"numDirLightShadows", "numPointLightShadows", "numSpotLightShadows",
+		"shadowMapEnabled", "shadowMapType", "toneMapping", 'physicallyCorrectLights',
+		"alphaTest", "doubleSided", "flipSided", "numClippingPlanes", "numClipIntersection", "depthPacking", "dithering",
+		"sheen", "indirectDiffuseSH"
+>>>>>>> Stashed changes
 	];
 
 	function getMaxBones( object ) {
@@ -218,7 +235,13 @@ function WebGLPrograms( renderer, cubemaps, extensions, capabilities, bindingSta
 			useFog: material.fog,
 			fogExp2: ( fog && fog.isFogExp2 ),
 
+<<<<<<< Updated upstream
 			flatShading: !! material.flatShading,
+=======
+			indirectDiffuseSH: material.indirectDiffuseSH,
+
+			flatShading: material.flatShading,
+>>>>>>> Stashed changes
 
 			sizeAttenuation: material.sizeAttenuation,
 			logarithmicDepthBuffer: logarithmicDepthBuffer,
