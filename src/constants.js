@@ -145,6 +145,11 @@ export const RGBADepthPacking = 3201;
 export const TangentSpaceNormalMap = 0;
 export const ObjectSpaceNormalMap = 1;
 
+export const LinearSRGBColorSpace = LinearEncoding;
+export const sRGBColorSpace = sRGBEncoding;
+export const LinearACESCGColorSpace = 3050;
+export const DisplayP3ColorSpace = 3100;
+
 export const ZeroStencilOp = 0;
 export const KeepStencilOp = 7680;
 export const ReplaceStencilOp = 7681;

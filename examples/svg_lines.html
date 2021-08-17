@@ -52,6 +52,14 @@
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				document.body.appendChild( renderer.domElement );
 
+				// Use Display P3 only if both the output device and browser CSS parser support it.
+				if ( matchMedia( '(color-gamut: p3)' ).matches && CSS.supports( 'color: color(display-p3 1 1 1)' ) ) {
+
+					THREE.ColorManagement.workingColorSpace = THREE.LinearACESCGColorSpace;
+					renderer.outputColorSpace = THREE.DisplayP3ColorSpace;
+
+				}
+
 				//
 
 				const vertices = [];
@@ -125,7 +133,7 @@
 				} );
 
 				renderer.render( scene, camera );
-				requestAnimationFrame( animate );
+				// requestAnimationFrame( animate );
 
 			}
 

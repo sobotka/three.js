@@ -7,7 +7,7 @@ import {
 	HalfFloatType,
 	FloatType,
 	UnsignedByteType,
-	LinearEncoding,
+	sRGBEncoding,
 	NoToneMapping,
 	LinearMipmapLinearFilter,
 	NearestFilter,
@@ -110,7 +110,7 @@ function WebGLRenderer( parameters = {} ) {
 
 	// physically based shading
 
-	this.outputEncoding = LinearEncoding;
+	this.outputEncoding = sRGBEncoding;
 
 	// physical lights
 
