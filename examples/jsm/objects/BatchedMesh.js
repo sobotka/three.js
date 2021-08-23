@@ -42,9 +42,9 @@ class BatchedMesh extends Mesh {
 
     }
 
-    const indexArray = this.indexCount > 65534
-      ? new Uint32Array( this.indexCount )
-      : new Uint16Array( this.indexCount );
+    const indexArray = indexCount > 65534
+      ? new Uint32Array( indexCount )
+      : new Uint16Array( indexCount );
 
     this.geometry.setIndex( new BufferAttribute( indexArray, 1 ) );
 
@@ -127,18 +127,38 @@ class BatchedMesh extends Mesh {
     if ( index === undefined ) return;
 
     const prevItem = this._batchItemProperties[ index - 1 ];
-    const vertexOffset = prevItem ? prevItem.vertexOffset : 0;
-    const indexOffset = prevItem ? prevItem.indexOffset : 0;
+    const geometry = this.geometry;
+
+    let vertexOffset = prevItem ? prevItem.vertexOffset : 0;
+    let indexOffset = prevItem ? prevItem.indexOffset : 0;
 
     for ( let i = index + 1; i < this._batchItemProperties.length; i++ ) {
 
-      for ( const attributeName in this.geometry.attributes ) {
+      const item = this._batchItemProperties[ i ];
 
-        // TODO(feat): Overwrite vertex attributes.
+      for ( const attributeName in geometry.attributes ) {
+
+        const attribute = geometry.attributes[ attributeName ];
+
+        for ( let j = 0; j < item.vertexCount; j++ ) {
+
+          attribute.copyAt( vertexOffset + j, attribute, item.vertexOffset + j );
+
+        }
 
       }
 
-      // TODO(feat): Overwrite index.
+      for ( let j = 0; j < item.indexCount; j++ ) {
+
+        geometry.index.setX( indexOffset + j, geometry.index.getX( item.indexOffset + j ) );
+
+      }
+
+      item.vertexOffset = vertexOffset;
+      item.indexOffset = indexOffset;
+
+      vertexOffset += item.vertexCount;
+      indexOffset += item.indexCount;
 
     }
 
@@ -147,8 +167,7 @@ class BatchedMesh extends Mesh {
 
     //
 
-    const lastItem = this._batchItemProperties[ this._batchItemProperties.length - 1 ];
-    this.geometry.setDrawRange( 0, lastItem.indexOffset + lastItem.indexCount );
+    this.geometry.setDrawRange( 0, indexOffset );
 
   }
 
