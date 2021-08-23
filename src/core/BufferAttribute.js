@@ -188,11 +188,11 @@ class BufferAttribute {
 
 	}
 
-	applyMatrix3( m ) {
+	applyMatrix3( m, start = 0, end = this.count ) {
 
 		if ( this.itemSize === 2 ) {
 
-			for ( let i = 0, l = this.count; i < l; i ++ ) {
+			for ( let i = start; i < end; i ++ ) {
 
 				_vector2.fromBufferAttribute( this, i );
 				_vector2.applyMatrix3( m );
@@ -203,7 +203,7 @@ class BufferAttribute {
 
 		} else if ( this.itemSize === 3 ) {
 
-			for ( let i = 0, l = this.count; i < l; i ++ ) {
+			for ( let i = start; i < end; i ++ ) {
 
 				_vector.fromBufferAttribute( this, i );
 				_vector.applyMatrix3( m );
@@ -218,9 +218,9 @@ class BufferAttribute {
 
 	}
 
-	applyMatrix4( m ) {
+	applyMatrix4( m, start = 0, end = this.count ) {
 
-		for ( let i = 0, l = this.count; i < l; i ++ ) {
+		for ( let i = start; i < end; i ++ ) {
 
 			_vector.x = this.getX( i );
 			_vector.y = this.getY( i );
@@ -236,9 +236,9 @@ class BufferAttribute {
 
 	}
 
-	applyNormalMatrix( m ) {
+	applyNormalMatrix( m, start = 0, end = this.count ) {
 
-		for ( let i = 0, l = this.count; i < l; i ++ ) {
+		for ( let i = start; i < end; i ++ ) {
 
 			_vector.x = this.getX( i );
 			_vector.y = this.getY( i );
