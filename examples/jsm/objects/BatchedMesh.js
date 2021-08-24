@@ -52,6 +52,8 @@ class BatchedMesh extends Mesh {
 
     this.geometry.setDrawRange( 0, 0 );
 
+    // TODO: Need bounding box, or else disable frustum culling.
+
   }
 
   copy( source ) {
@@ -76,14 +78,17 @@ class BatchedMesh extends Mesh {
     const prevItem = this._batchItemProperties[ index - 1 ];
 
     if ( geometry.boundingBox === null ) geometry.computeBoundingBox();
+    if ( geometry.boundingSphere === null ) geometry.computeBoundingSphere();
 
     const item = {
 
       id: id,
 
       geometry: static ? null : geometry,
-      boundingBox: geometry.boundingBox,
       matrix: matrix.toArray( [] ),
+
+      boundingBox: geometry.boundingBox,
+      boundingSphere: geometry.boundingSphere,
 
       vertexOffset: prevItem.vertexOffset + prevItem.vertexCount,
       vertexCount: geometry.attributes.position.count,
@@ -217,19 +222,21 @@ class BatchedMesh extends Mesh {
 
   raycast( raycaster, intersects ) {
 
-    const matrixWorld = this.matrixWorld;
-    const itemCount = this._batchItemProperties.length;
-
     _mesh.geometry = this.geometry;
     _mesh.material = this.material;
 
     if ( _mesh.material === undefined ) return;
 
-    const { start, count } = this.geometry.drawRange;
+    const geometry = this.geometry;
+    const matrixWorld = this.matrixWorld;
+    const batchSize = this._batchItemProperties.length;
+
+    const { boundingBox, boundingSphere } = geometry;
+    const { start, count } = geometry.drawRange;
 
     try {
 
-      for ( let index = 0; index < itemCount; index ++ ) {
+      for ( let index = 0; index < batchSize; index ++ ) {
 
         const item = this._batchItemProperties[ index ];
 
@@ -239,11 +246,13 @@ class BatchedMesh extends Mesh {
 
         _itemWorldMatrix.multiplyMatrices( matrixWorld, _itemWorldMatrix );
 
-        // the mesh represents this single instance
+        // mesh represents this item in the batch
 
         _mesh.matrixWorld = _instanceWorldMatrix;
 
-        this.geometry.setDrawRange( item.indexOffset, item.indexCount );
+        geometry.boundingBox = item.boundingBox;
+        geometry.boundingSphere = item.boundingSphere;
+        geometry.setDrawRange( item.indexOffset, item.indexCount );
 
         _mesh.raycast( raycaster, _batchIntersects );
 
@@ -264,7 +273,11 @@ class BatchedMesh extends Mesh {
 
     } finally {
 
-      this.geometry.setDrawRange( start, count );
+      geometry.boundingBox = boundingBox;
+      geometry.boundingSphere = boundingSphere;
+      geometry.setDrawRange( start, count );
+
+      _batchIntersects.length = 0;
 
     }
 
