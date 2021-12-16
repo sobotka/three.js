@@ -165,6 +165,11 @@ export const RGBADepthPacking = 3201;
 export const TangentSpaceNormalMap = 0;
 export const ObjectSpaceNormalMap = 1;
 
+export const LinearSRGBColorSpace = LinearEncoding; // scene-referred
+export const sRGBColorSpace = sRGBEncoding; // display-referred
+export const LinearACESCGColorSpace = 3050; // scene-referred
+export const DisplayP3ColorSpace = 3100; // display-referred
+
 export const ZeroStencilOp = 0;
 export const KeepStencilOp = 7680;
 export const ReplaceStencilOp = 7681;

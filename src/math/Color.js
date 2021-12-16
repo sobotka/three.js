@@ -1,5 +1,6 @@
 import * as MathUtils from './MathUtils.js';
-import { ColorManagement } from './ColorManagement.js';
+import { ColorManagement, SourceColorSpace, SRGBToLinear, LinearToSRGB } from './ColorManagement.js';
+import { DisplayP3ColorSpace, sRGBColorSpace, LinearSRGBColorSpace } from '../constants.js';
 
 const _colorKeywords = { 'aliceblue': 0xF0F8FF, 'antiquewhite': 0xFAEBD7, 'aqua': 0x00FFFF, 'aquamarine': 0x7FFFD4, 'azure': 0xF0FFFF,
 	'beige': 0xF5F5DC, 'bisque': 0xFFE4C4, 'black': 0x000000, 'blanchedalmond': 0xFFEBCD, 'blue': 0x0000FF, 'blueviolet': 0x8A2BE2,
@@ -26,6 +27,7 @@ const _colorKeywords = { 'aliceblue': 0xF0F8FF, 'antiquewhite': 0xFAEBD7, 'aqua'
 	'springgreen': 0x00FF7F, 'steelblue': 0x4682B4, 'tan': 0xD2B48C, 'teal': 0x008080, 'thistle': 0xD8BFD8, 'tomato': 0xFF6347, 'turquoise': 0x40E0D0,
 	'violet': 0xEE82EE, 'wheat': 0xF5DEB3, 'white': 0xFFFFFF, 'whitesmoke': 0xF5F5F5, 'yellow': 0xFFFF00, 'yellowgreen': 0x9ACD32 };
 
+const _source = { r: 0, g: 0, b: 0 };
 const _hslA = { h: 0, s: 0, l: 0 };
 const _hslB = { h: 0, s: 0, l: 0 };
 
@@ -37,42 +39,6 @@ function hue2rgb( p, q, t ) {
 	if ( t < 1 / 2 ) return q;
 	if ( t < 2 / 3 ) return p + ( q - p ) * 6 * ( 2 / 3 - t );
 	return p;
-
-}
-
-function SRGBToLinear( c ) {
-
-	return ( c < 0.04045 ) ? c * 0.0773993808 : Math.pow( c * 0.9478672986 + 0.0521327014, 2.4 );
-
-}
-
-function LinearToSRGB( c ) {
-
-	return ( c < 0.0031308 ) ? c * 12.92 : 1.055 * ( Math.pow( c, 0.41666 ) ) - 0.055;
-
-}
-
-function internalToSRGB( c ) {
-
-	if ( ColorManagement.enabled ) {
-
-		return LinearToSRGB( c );
-
-	}
-
-	return c;
-
-}
-
-function SRGBToInternal( c ) {
-
-	if ( ColorManagement.enabled ) {
-
-		return SRGBToLinear( c );
-
-	}
-
-	return c;
 
 }
 
@@ -121,13 +87,15 @@ class Color {
 
 	}
 
-	setHex( hex ) {
+	setHex( hex, colorSpace = SourceColorSpace ) {
 
 		hex = Math.floor( hex );
 
-		this.r = SRGBToInternal( ( hex >> 16 & 255 ) / 255 );
-		this.g = SRGBToInternal( ( hex >> 8 & 255 ) / 255 );
-		this.b = SRGBToInternal( ( hex & 255 ) / 255 );
+		this.r = ( hex >> 16 & 255 ) / 255;
+		this.g = ( hex >> 8 & 255 ) / 255;
+		this.b = ( hex & 255 ) / 255;
+
+		ColorManagement.toWorkingColorSpace( this, colorSpace );
 
 		return this;
 
@@ -143,7 +111,7 @@ class Color {
 
 	}
 
-	setHSL( h, s, l ) {
+	setHSL( h, s, l, colorSpace = SourceColorSpace ) {
 
 		// h,s,l ranges are in 0.0 - 1.0
 		h = MathUtils.euclideanModulo( h, 1 );
@@ -152,16 +120,18 @@ class Color {
 
 		if ( s === 0 ) {
 
-			this.r = this.g = this.b = SRGBToInternal( l );
+			this.r = this.g = this.b = ColorManagement.toWorkingColorSpace( l );
 
 		} else {
 
 			const p = l <= 0.5 ? l * ( 1 + s ) : l + s - ( l * s );
 			const q = ( 2 * l ) - p;
 
-			this.r = SRGBToInternal( hue2rgb( q, p, h + 1 / 3 ) );
-			this.g = SRGBToInternal( hue2rgb( q, p, h ) );
-			this.b = SRGBToInternal( hue2rgb( q, p, h - 1 / 3 ) );
+			this.r = hue2rgb( q, p, h + 1 / 3 );
+			this.g = hue2rgb( q, p, h );
+			this.b = hue2rgb( q, p, h - 1 / 3 );
+
+			ColorManagement.toWorkingColorSpace( this, colorSpace );
 
 		}
 
@@ -169,7 +139,7 @@ class Color {
 
 	}
 
-	setStyle( style ) {
+	setStyle( style, colorSpace = SourceColorSpace ) {
 
 		function handleAlpha( string ) {
 
@@ -202,9 +172,11 @@ class Color {
 					if ( color = /^\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*(\d*\.?\d+)\s*)?$/.exec( components ) ) {
 
 						// rgb(255,0,0) rgba(255,0,0,0.5)
-						this.r = SRGBToInternal( Math.min( 255, parseInt( color[ 1 ], 10 ) ) / 255 );
-						this.g = SRGBToInternal( Math.min( 255, parseInt( color[ 2 ], 10 ) ) / 255 );
-						this.b = SRGBToInternal( Math.min( 255, parseInt( color[ 3 ], 10 ) ) / 255 );
+						this.r = Math.min( 255, parseInt( color[ 1 ], 10 ) ) / 255;
+						this.g = Math.min( 255, parseInt( color[ 2 ], 10 ) ) / 255;
+						this.b = Math.min( 255, parseInt( color[ 3 ], 10 ) ) / 255;
+
+						ColorManagement.toWorkingColorSpace( this, colorSpace );
 
 						handleAlpha( color[ 4 ] );
 
@@ -215,9 +187,11 @@ class Color {
 					if ( color = /^\s*(\d+)\%\s*,\s*(\d+)\%\s*,\s*(\d+)\%\s*(?:,\s*(\d*\.?\d+)\s*)?$/.exec( components ) ) {
 
 						// rgb(100%,0%,0%) rgba(100%,0%,0%,0.5)
-						this.r = SRGBToInternal( Math.min( 100, parseInt( color[ 1 ], 10 ) ) / 100 );
-						this.g = SRGBToInternal( Math.min( 100, parseInt( color[ 2 ], 10 ) ) / 100 );
-						this.b = SRGBToInternal( Math.min( 100, parseInt( color[ 3 ], 10 ) ) / 100 );
+						this.r = Math.min( 100, parseInt( color[ 1 ], 10 ) ) / 100;
+						this.g = Math.min( 100, parseInt( color[ 2 ], 10 ) ) / 100;
+						this.b = Math.min( 100, parseInt( color[ 3 ], 10 ) ) / 100;
+
+						ColorManagement.toWorkingColorSpace( this, colorSpace );
 
 						handleAlpha( color[ 4 ] );
 
@@ -239,7 +213,7 @@ class Color {
 
 						handleAlpha( color[ 4 ] );
 
-						return this.setHSL( h, s, l );
+						return this.setHSL( h, s, l, colorSpace );
 
 					}
 
@@ -257,18 +231,22 @@ class Color {
 			if ( size === 3 ) {
 
 				// #ff0
-				this.r = SRGBToInternal( parseInt( hex.charAt( 0 ) + hex.charAt( 0 ), 16 ) / 255 );
-				this.g = SRGBToInternal( parseInt( hex.charAt( 1 ) + hex.charAt( 1 ), 16 ) / 255 );
-				this.b = SRGBToInternal( parseInt( hex.charAt( 2 ) + hex.charAt( 2 ), 16 ) / 255 );
+				this.r = parseInt( hex.charAt( 0 ) + hex.charAt( 0 ), 16 ) / 255;
+				this.g = parseInt( hex.charAt( 1 ) + hex.charAt( 1 ), 16 ) / 255;
+				this.b = parseInt( hex.charAt( 2 ) + hex.charAt( 2 ), 16 ) / 255;
+
+				ColorManagement.toWorkingColorSpace( this, colorSpace );
 
 				return this;
 
 			} else if ( size === 6 ) {
 
 				// #ff0000
-				this.r = SRGBToInternal( parseInt( hex.charAt( 0 ) + hex.charAt( 1 ), 16 ) / 255 );
-				this.g = SRGBToInternal( parseInt( hex.charAt( 2 ) + hex.charAt( 3 ), 16 ) / 255 );
-				this.b = SRGBToInternal( parseInt( hex.charAt( 4 ) + hex.charAt( 5 ), 16 ) / 255 );
+				this.r = parseInt( hex.charAt( 0 ) + hex.charAt( 1 ), 16 ) / 255;
+				this.g = parseInt( hex.charAt( 2 ) + hex.charAt( 3 ), 16 ) / 255;
+				this.b = parseInt( hex.charAt( 4 ) + hex.charAt( 5 ), 16 ) / 255;
+
+				ColorManagement.toWorkingColorSpace( this, colorSpace );
 
 				return this;
 
@@ -278,7 +256,7 @@ class Color {
 
 		if ( style && style.length > 0 ) {
 
-			return this.setColorName( style );
+			return this.setColorName( style, colorSpace );
 
 		}
 
@@ -286,7 +264,7 @@ class Color {
 
 	}
 
-	setColorName( style ) {
+	setColorName( style, colorSpace = SourceColorSpace ) {
 
 		// color keywords
 		const hex = _colorKeywords[ style.toLowerCase() ];
@@ -294,7 +272,7 @@ class Color {
 		if ( hex !== undefined ) {
 
 			// red
-			this.setHex( hex );
+			this.setHex( hex, colorSpace );
 
 		} else {
 
@@ -397,25 +375,33 @@ class Color {
 
 	}
 
-	getHex() {
+	getHex( colorSpace = SourceColorSpace ) {
 
-		const r = internalToSRGB( this.r ), g = internalToSRGB( this.g ), b = internalToSRGB( this.b );
+		ColorManagement.fromWorkingColorSpace( _source.copy( this ), colorSpace );
+
+		const r = _source.r;
+		const g = _source.g;
+		const b = _source.b;
 
 		return ( r * 255 ) << 16 ^ ( g * 255 ) << 8 ^ ( b * 255 ) << 0;
 
 	}
 
-	getHexString() {
+	getHexString( colorSpace = SourceColorSpace ) {
 
-		return ( '000000' + this.getHex().toString( 16 ) ).slice( - 6 );
+		return ( '000000' + this.getHex( colorSpace ).toString( 16 ) ).slice( - 6 );
 
 	}
 
-	getHSL( target ) {
+	getHSL( target, colorSpace = SourceColorSpace ) {
 
 		// h,s,l ranges are in 0.0 - 1.0
 
-		const r = internalToSRGB( this.r ), g = internalToSRGB( this.g ), b = internalToSRGB( this.b );
+		ColorManagement.fromWorkingColorSpace( _source.copy( this ), colorSpace );
+
+		const r = _source.r;
+		const g = _source.g;
+		const b = _source.b;
 
 		const max = Math.max( r, g, b );
 		const min = Math.min( r, g, b );
@@ -454,11 +440,21 @@ class Color {
 
 	}
 
-	getStyle() {
+	getStyle( colorSpace = SourceColorSpace ) {
 
-		const r = internalToSRGB( this.r ), g = internalToSRGB( this.g ), b = internalToSRGB( this.b );
+		ColorManagement.fromWorkingColorSpace( _source.copy( this ), colorSpace );
 
-		return 'rgb(' + ( ( r * 255 ) | 0 ) + ',' + ( ( g * 255 ) | 0 ) + ',' + ( ( b * 255 ) | 0 ) + ')';
+		const r = _source.r;
+		const g = _source.g;
+		const b = _source.b;
+
+		if ( colorSpace === DisplayP3ColorSpace ) {
+
+			return `color(display-p3 ${r} ${g} ${b})`;
+
+		}
+
+		return `rgb(${( r * 255 ) | 0}, ${( g * 255 ) | 0}, ${( b * 255 ) | 0})`;
 
 	}
 
