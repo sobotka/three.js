@@ -120,7 +120,7 @@ class Color {
 
 		if ( s === 0 ) {
 
-			this.r = this.g = this.b = ColorManagement.toWorkingColorSpace( l );
+			this.r = this.g = this.b = l;
 
 		} else {
 
@@ -131,9 +131,9 @@ class Color {
 			this.g = hue2rgb( q, p, h );
 			this.b = hue2rgb( q, p, h - 1 / 3 );
 
-			ColorManagement.toWorkingColorSpace( this, colorSpace );
-
 		}
+
+		ColorManagement.toWorkingColorSpace( this, colorSpace );
 
 		return this;
 
