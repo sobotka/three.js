@@ -23,6 +23,8 @@
 
 			import { SVGRenderer } from './jsm/renderers/SVGRenderer.js';
 
+			THREE.ColorManagement.setSourceColorSpace( THREE.DisplayP3ColorSpace );
+
 			let camera, scene, renderer;
 
 			init();
@@ -39,6 +41,12 @@
 				renderer = new SVGRenderer();
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				document.body.appendChild( renderer.domElement );
+
+				if ( matchMedia( '(color-gamut: p3)' ).matches ) {
+
+					renderer.outputColorSpace = THREE.DisplayP3ColorSpace;
+
+				}
 
 				//
 
@@ -113,7 +121,7 @@
 				} );
 
 				renderer.render( scene, camera );
-				requestAnimationFrame( animate );
+				// requestAnimationFrame( animate );
 
 			}
 
