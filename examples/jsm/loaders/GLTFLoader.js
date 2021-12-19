@@ -510,7 +510,7 @@ class GLTFLightsExtension {
 		const lightDef = lightDefs[ lightIndex ];
 		let lightNode;
 
-		const color = new Color().setHex( 1.0, 1.0, 1.0 );
+		const color = new Color( 1.0, 1.0, 1.0 );
 
 		if ( lightDef.color !== undefined ) color.fromArray( lightDef.color );
 
