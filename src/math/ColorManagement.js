@@ -14,9 +14,16 @@ export function LinearToSRGB( c ) {
 
 }
 
+// JavaScript RGB-to-RGB transforms, defined as
+// FN[InputColorSpace][OutputColorSpace] callback functions.
+const FN = {
+	[ sRGBColorSpace ]: { [ LinearSRGBColorSpace ]: SRGBToLinear },
+	[ LinearSRGBColorSpace ]: { [ sRGBColorSpace ]: LinearToSRGB },
+};
+
 // Chromatic Adaptation Transform (CAT) RGB-to-RGB transforms, defined as
-// CAT02[InputColorSpace][OutputColorSpace] 3x3 matrices.
-// Based on https://www.colour-science.org/apps/.
+// CAT02[InputColorSpace][OutputColorSpace] 3x3 matrices computed by
+// https://www.colour-science.org/apps/.
 const CAT02 = {
 	[LinearACESCGColorSpace]: {
 		[sRGBColorSpace]: [
@@ -51,31 +58,43 @@ const _vector = /*@__PURE__*/new Vector3();
 
 export const ColorManagement = {
 
-	enabled: true,
+	enabled: false,
 
-	workingColorSpace: LinearSRGBColorSpace,
+	get workingColorSpace () {
 
-	fromWorkingColorSpace: function ( color, targetColorSpace ) {
+		return LinearSRGBColorSpace;
 
-		if ( this.enabled === false || targetColorSpace === WorkingColorSpace ) {
+	},
+
+	set workingColorSpace ( colorSpace ) {
+
+		console.warn( 'THREE.ColorManagement: .workingColorSpace is readonly.' );
+
+	},
+
+	convert: function ( color, sourceColorSpace, targetColorSpace ) {
+
+		if ( this.enabled === false || sourceColorSpace === targetColorSpace ) {
 
 			return color;
 
 		}
 
-		if ( targetColorSpace === sRGBColorSpace && WorkingColorSpace === LinearSRGBColorSpace ) {
+		if ( FN[ sourceColorSpace ] && FN[ sourceColorSpace ][ targetColorSpace ] !== undefined ) {
 
-			color.r = LinearToSRGB( color.r );
-			color.g = LinearToSRGB( color.g );
-			color.b = LinearToSRGB( color.b );
+			const fn = FN[ sourceColorSpace ][ targetColorSpace ];
+
+			color.r = fn( color.r );
+			color.g = fn( color.g );
+			color.b = fn( color.b );
 
 			return color;
 
 		}
 
-		if ( CAT02[ WorkingColorSpace ] && CAT02[ WorkingColorSpace ][ targetColorSpace ] !== undefined ) {
+		if ( CAT02[ sourceColorSpace ] && CAT02[ sourceColorSpace ][ targetColorSpace ] !== undefined ) {
 
-			_matrix.fromArray( CAT02[ WorkingColorSpace ][ targetColorSpace ] ).transpose();
+			_matrix.fromArray( CAT02[ sourceColorSpace ][ targetColorSpace ] ).transpose();
 			_vector.set( color.r, color.g, color.b ).applyMatrix3( _matrix );
 
 			color.r = _vector.x;
@@ -90,48 +109,15 @@ export const ColorManagement = {
 
 	},
 
+	fromWorkingColorSpace: function ( color, targetColorSpace ) {
+
+		return this.convert( color, this.workingColorSpace, targetColorSpace );
+
+	},
+
 	toWorkingColorSpace: function ( color, sourceColorSpace ) {
 
-		if ( this.enabled === false || sourceColorSpace === WorkingColorSpace ) {
-
-			return color;
-
-		}
-
-		if ( sourceColorSpace === sRGBColorSpace && WorkingColorSpace === LinearSRGBColorSpace ) {
-
-			color.r = SRGBToLinear( color.r );
-			color.g = SRGBToLinear( color.g );
-			color.b = SRGBToLinear( color.b );
-
-			return color;
-
-		}
-
-		if ( sourceColorSpace === LinearSRGBColorSpace ) {
-
-			color.r = LinearToSRGB( color.r );
-			color.g = LinearToSRGB( color.g );
-			color.b = LinearToSRGB( color.b );
-
-			sourceColorSpace = sRGBColorSpace; // continue to CAT02 transforms.
-
-		}
-
-		if ( CAT02[ sourceColorSpace ] && CAT02[ sourceColorSpace ][ WorkingColorSpace ] !== undefined ) {
-
-			_matrix.fromArray( CAT02[ WorkingColorSpace ][ sourceColorSpace ] ).transpose();
-			_vector.set( color.r, color.g, color.b ).applyMatrix3( _matrix );
-
-			color.r = _vector.x;
-			color.g = _vector.y;
-			color.b = _vector.z;
-
-			return color;
-
-		}
-
-		throw new Error( 'Unsupported color space conversion.' );
+		return this.convert( color, sourceColorSpace, this.workingColorSpace );
 
 	},
 

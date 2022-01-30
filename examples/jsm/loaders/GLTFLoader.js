@@ -509,7 +509,7 @@ class GLTFLightsExtension {
 		const lightDef = lightDefs[ lightIndex ];
 		let lightNode;
 
-		const color = new Color( 1.0, 1.0, 1.0 );
+		const color = new Color( 0xffffff );
 
 		if ( lightDef.color !== undefined ) color.fromArray( lightDef.color );
 
@@ -1503,7 +1503,7 @@ class GLTFMeshStandardSGMaterial extends MeshStandardMaterial {
 		].join( '\n' );
 
 		const uniforms = {
-			specular: { value: new Color( 1.0, 1.0, 1.0 ) },
+			specular: { value: new Color().setHex( 0xffffff ) },
 			glossiness: { value: 1 },
 			specularMap: { value: null },
 			glossinessMap: { value: null }
