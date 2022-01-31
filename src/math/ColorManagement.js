@@ -60,13 +60,13 @@ export const ColorManagement = {
 
 	enabled: false,
 
-	get workingColorSpace () {
+	get workingColorSpace() {
 
 		return LinearSRGBColorSpace;
 
 	},
 
-	set workingColorSpace ( colorSpace ) {
+	set workingColorSpace( colorSpace ) {
 
 		console.warn( 'THREE.ColorManagement: .workingColorSpace is readonly.' );
 
