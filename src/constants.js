@@ -146,10 +146,10 @@ export const TangentSpaceNormalMap = 0;
 export const ObjectSpaceNormalMap = 1;
 
 // Color space string identifiers, matching CSS Color Module Level 4 and WebGPU names where available.
-export const sRGBColorSpace = 'srgb';
+export const SRGBColorSpace = 'srgb';
 export const LinearSRGBColorSpace = 'srgb-linear';
 export const DisplayP3ColorSpace = 'display-p3';
-export const LinearACESCGColorSpace = 'acescg';
+export const ACESCGColorSpace = 'acescg';
 
 export const ZeroStencilOp = 0;
 export const KeepStencilOp = 7680;

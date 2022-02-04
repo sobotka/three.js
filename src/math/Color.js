@@ -1,6 +1,6 @@
 import * as MathUtils from './MathUtils.js';
 import { ColorManagement, SRGBToLinear, LinearToSRGB } from './ColorManagement.js';
-import { DisplayP3ColorSpace, sRGBColorSpace } from '../constants.js';
+import { DisplayP3ColorSpace, SRGBColorSpace } from '../constants.js';
 
 const _colorKeywords = { 'aliceblue': 0xF0F8FF, 'antiquewhite': 0xFAEBD7, 'aqua': 0x00FFFF, 'aquamarine': 0x7FFFD4, 'azure': 0xF0FFFF,
 	'beige': 0xF5F5DC, 'bisque': 0xFFE4C4, 'black': 0x000000, 'blanchedalmond': 0xFFEBCD, 'blue': 0x0000FF, 'blueviolet': 0x8A2BE2,
@@ -97,7 +97,7 @@ class Color {
 
 	}
 
-	setHex( hex, colorSpace = sRGBColorSpace ) {
+	setHex( hex, colorSpace = SRGBColorSpace ) {
 
 		hex = Math.floor( hex );
 
@@ -121,7 +121,7 @@ class Color {
 
 	}
 
-	setHSL( h, s, l, colorSpace = sRGBColorSpace ) {
+	setHSL( h, s, l, colorSpace = SRGBColorSpace ) {
 
 		// h,s,l ranges are in 0.0 - 1.0
 		h = MathUtils.euclideanModulo( h, 1 );
@@ -149,7 +149,7 @@ class Color {
 
 	}
 
-	setStyle( style, colorSpace = sRGBColorSpace ) {
+	setStyle( style, colorSpace = SRGBColorSpace ) {
 
 		function handleAlpha( string ) {
 
@@ -274,7 +274,7 @@ class Color {
 
 	}
 
-	setColorName( style, colorSpace = sRGBColorSpace ) {
+	setColorName( style, colorSpace = SRGBColorSpace ) {
 
 		// color keywords
 		const hex = _colorKeywords[ style.toLowerCase() ];
@@ -347,7 +347,7 @@ class Color {
 
 	}
 
-	getHex( colorSpace = sRGBColorSpace ) {
+	getHex( colorSpace = SRGBColorSpace ) {
 
 		ColorManagement.fromWorkingColorSpace( toComponents( this, _rgb ), colorSpace );
 
@@ -359,13 +359,13 @@ class Color {
 
 	}
 
-	getHexString( colorSpace = sRGBColorSpace ) {
+	getHexString( colorSpace = SRGBColorSpace ) {
 
 		return ( '000000' + this.getHex( colorSpace ).toString( 16 ) ).slice( - 6 );
 
 	}
 
-	getHSL( target, colorSpace = sRGBColorSpace ) {
+	getHSL( target, colorSpace = SRGBColorSpace ) {
 
 		// h,s,l ranges are in 0.0 - 1.0
 
@@ -412,7 +412,7 @@ class Color {
 
 	}
 
-	getStyle( colorSpace = sRGBColorSpace ) {
+	getStyle( colorSpace = SRGBColorSpace ) {
 
 		ColorManagement.fromWorkingColorSpace( toComponents( this, _rgb ), colorSpace );
 
