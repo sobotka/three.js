@@ -69,6 +69,16 @@
 	<figure class="float">
 		<img src="resources/srgb_gamut.png" alt="An illustration of the sRGB gamut, showing its color primaries and D65 white point.">
 		<figcaption>
+			<!---
+				A "gamut" here is a tad deceptive, doubly so when discussing
+ 				rendering systems. In the image above, we are describing the
+				tristimulus chromaticities in 2D for sRGB / BT.709. It should
+ 				be noted that this only two dimensions of three. As such, when
+				saying "gamut", it might be prudent to think of the totality
+				of a given 3D volume, which can vary. Is it a render? Is it
+				a fully formed image or a display? These have very different
+				"gamuts".
+			--->
 			<b>FIGURE:</b> sRGB color gamut located within the visible spectrum.
 			Source: <a href="https://en.wikipedia.org/wiki/SRGB" target="_blank" rel="noopener">Wikipedia</a>
 		</figcaption>
@@ -80,15 +90,49 @@
 			be chosen from among the infinite wavelengths of light. A color space can only express
 			colors that are possible as a linear combination of its primary colors, each having weights
 			on [0,1].
+			<!---
+				"they must be chosen from among the infinite wavelengths of light."
+
+				We do not have access to wavelenths when dealing in a tristimulus
+				encoding. We are quite literally dealing with tristimuli, and as
+				such, a potentially infinite combination of spectra could yield
+				a given point on the xy tristimulus specification. This may appear
+				at first blush as pedantry, but it is a criical thing when it comes
+				to the output from a rendering system.
+
+				"each having weights on [0,1]"
+				
+				Caution here. When dealing with tristimulus encodings, the ranges are
+				variable based on context.
+			--->
 		</li>
 		<li>
 			<b>White point:</b> Any color space must choose what combination of its primary colors
 			represent the color "white".
+			<!---
+				"what combination of its primary colors"
+
+				Note that for properly constructed tristimulus colour spaces, R=G=B will
+				yield achromatic. That is not a byproduct necessarily of the primaries, but
+				rather the magnitudes that are not revealed within the RGB ratios; it's baked
+				into a lower level substrate.
+				
+				Consider for example the cinema standard of DCI-P3, versus a conventional
+				MacBook Pro from 2015 onward. Both have *identical* primaries in terms of
+				CIE xy tristimulus chromaticities, but different lower level gains to yield
+				variable white points.
+			--->
 		</li>
 		<li>
 			<b>Color gamut:</b> Once color primaries and a white point have been chosen, these represent
 			a region within the color spectrum (a "gamut") whose colors may be expressed by the color
 			space. Colors not within the color gamut ("out of gamut") cannot be expressed.
+			<!---
+				"spectrum"
+			
+				Caution as can be inferred / conflated with the visible light spectrum etc. "Volume"
+				or another term might be less open to conflation?
+			--->
 		</li>
 		<li>
 			<b>Color model:</b> Syntax for numerically identifying colors within chosen the color gamut —
@@ -105,10 +149,33 @@
 			a mathematical function. The most common transfer functions are the <i>linear transfer function</i>
 			and the <i>sRGB transfer function</i>. The sRGB transfer function is sometimes also approximated
 			as a <i>gamma function</i>.
+			
+			<!---
+				Solid section. Terrific usage of the term transfer function to avoid conflation.
+
+				Caution over interpretations of the sRGB specification with respect to transfer functions.
+
+				If one reads the specification carefully, it lists two generalized transfer functions,
+				one for encoding, typically labelled an OETF, and one that embodies the reference display,
+				typically referred to as the display's EOTF.
+
+				In the sRGB case, the two part transfer function describes an encoding, and the reference
+				display EOTF is identified in three sections as being a pure exponential 2.2.
+			--->
 		</li>
 	</ul>
 
 	<p>Consider two very common color spaces: [page:sRGBColorSpace] ("sRGB") and [page:LinearSRGBColorSpace] ("Linear-sRGB"). Both use the same primaries and white point, and therefore have the same color gamut. Both use the RGB color model. They differ only in the transfer function — Linear-sRGB is linear with respect to physical light intensity. sRGB uses the non-linear sRGB transfer function, and more closely resembles the way that the human eye perceives light and the responsiveness of common display devices.</p>
+	<!---
+		"and therefore have the same color gamut"
+
+		Proper inference here.
+
+		It may be worth caution when using sRGB / BT.709 primaries for rendering, as the label can sometimes lead
+		to the conflation of the rendering model as being "sRGB" or "BT.709", which is is very much *not* due to
+		the difference in the bounds of the domains. One has a closed domain gamut volume, the other has no upper
+		value on the gamut volume, and as such, the gamut volume is technically infinite.
+	--->
 
 	<p>That difference is important in any color space used for rendering, blending, or compositing. Formally, the transfer function divides the common color spaces into two families:</p>
 
@@ -126,6 +193,33 @@
 			<b>Scene referred</b> (linear) color spaces are necessary when performing lighting
 			calculations, and are often preferable for blending and interpolation. Directly
 			displaying colors in a scene referred color space will look incorrect to the human eye.
+			<!---
+				"are often preferable for blending and interpolation"
+
+				Some caution here.
+
+				We can have a linear-with-respect-to-tristimulus model in both the closed
+				domain of a display or an image, **and** in the open domain rendering model.
+
+				This is not simply a facet of display referred versus scene referred, which
+				is why I've tried to highlight this using the domain ranges.
+
+				It is worth pointing out that we can blend two fully formed closed domain
+				images linearly, and achieve "correct" results. We can also blend two buffers
+				in the open domain, linearly, and achieve "correct" results.
+
+				While not totally correct, as again we are trapped in a tristimulus model, the
+				"linear" aspect will yield different meaning in each case. In the former, we could
+				consider this as dissolving between two fully formed closed domain images, while
+				in the latter it could be considered as something happening in the pseudo-physics
+				of the light-like transport happening in front of the camera.
+
+				On the subject of sampling, when we downsample, linear ratios is typically fine
+				due to the fact that we are degrading the spatial information. When upsampling,
+				we are actually *reconstructing* a signal, and linear ratios will lead to
+				incorrect reconstructions, where more perceptually weighted values will 
+				reconstruct closer to the source dataset. More on that for another day...
+			--->
 			<ul>
 				<li><b>Examples:</b> [page:LinearSRGBColorSpace], [page:ACESCGColorSpace]</li>
 			</ul>
@@ -138,6 +232,10 @@
 			formats. While some modern displays support wider gamuts like Display-P3, the web
 			platform's graphics APIs currently do not. Applications using three.js today will
 			typically use only the sRGB and Linear-sRGB color spaces.</i>
+			
+			<!---
+				Caution here as per above regarding possible collision of "linear".
+			--->
 		</p>
 	</blockquote>
 
@@ -166,6 +264,11 @@
 			linear, scene referred color space, in which RGB color values are proportional to
 			physical illumination. The color space assigned for rendering is called the Working
 			Color Space, and is not user-configurable in three.js at this time.
+			<!---
+				See notes above regarding domains. It can get very slippery with models that
+				do not fully account for the nuances here. "Scene referred" versus "display
+				referred" can be such terms that require some caution.
+			--->
 			<ul>
 				<li><b>Family:</b> Scene Referred</li>
 				<li><b>Constant:</b> [page:LinearSRGBColorSpace]</li>
@@ -194,6 +297,9 @@
 			<b>FIGURE:</b> Illustration of a typical linear workflow, with sources provided in
 			various color spaces, lighting calculations in a linear working color space, and
 			conversion of rendered results to an output color space for display or export.
+			<!---
+				Worth noting that "LDR" and "HDR" is ambiguous. Where do we draw the line?
+			--->
 		</figcaption>
 	</figure>
 
@@ -239,11 +345,29 @@ renderer.outputEncoding = THREE.sRGBEncoding; // optional with post-processing
 			receive the correct conversion to the working color space during GPU upload. HDR formats
 			like EXR (used for environment maps or light maps) may use the Linear-sRGB color space
 			instead, indicated with <i>texture.encoding = LinearEncoding</i>.
+			<!---
+				Does this require more fleshing out? Incoming buffers could be emissions, albedos,
+				fully formed imagery, or a number of other assets?
+			--->
 		</li>
 		<li>
 			<b>Non-color textures:</b> Non-color textures do not have an associated color space,
 			and must use the (default) texture annotation of <i>texture.encoding = LinearEncoding</i>
 			to preserve their data correctly.
+			<!---
+				Is it worth noting that some data may be nonlinear? Non colour is perhaps
+				more appropriate to be considered entirely outside of the colour management
+				chain with respect to typical internal handling transforms.
+
+				Looking forward, sometimes data may require visualizations. Think of perhaps
+				a specific colour framework for normals, or a heat map for depth, or any
+				number of different data formats with different ranges. These visualizations
+				*may* be worth keeping an eye on for future threejs development.
+
+				That is, while data lives "outside" of the colour managagement side, it does
+				indeed fit inside the pixel management chain. How is the data compressed, and
+				how should it be visualized?
+			--->
 		</li>
 	</ul>
 
@@ -253,6 +377,9 @@ renderer.outputEncoding = THREE.sRGBEncoding; // optional with post-processing
 			define color space information. While three.js attempts to handle most cases, problems
 			are common with older file formats. For best results, use glTF 2.0 ([page:GLTFLoader])
 			and test 3D models in online viewers early to confirm the asset itself is correct.</i>
+			<!---
+				Excellent note. Trust nothing.
+			--->
 		</p>
 	</blockquote>
 
@@ -270,6 +397,11 @@ renderer.outputEncoding = THREE.sRGBEncoding; // optional with post-processing
 			color space. HDR renders — such as environment maps ("IBL"), light maps, or irradiance
 			data — should use the scene referred working color space, Linear-sRGB, to store
 			physically-meaningful lighting data efficiently.
+			<!---
+				It might be worth making a distinction between light-like data and an image
+				here. They are two separate things, both in terms of domain, and also in
+				terms of qualia.
+			--->
 		</li>
 	</ul>
 
@@ -293,6 +425,11 @@ renderer.outputEncoding = THREE.sRGBEncoding; // optional with post-processing
 		hexadecimal color values taken from color pickers or CSS are generally sRGB, <i>not</i> Linear-sRGB,
 		[page:Color] getter and setter methods will automatically perform the conversion when reading or writing
 		hexadecimal, HSL, CSS, or similar color representations:
+		<!---
+			Somewhere the conundrum of the unfortunate format known as hexadecimal will likely become
+			front and centre. It might be worth considering convention here, where _all_ hexadecimal 
+			values be implied sRGB. Subject for the future...
+		--->
 	</p>
 
 	<code>
@@ -318,6 +455,13 @@ renderer.outputEncoding = THREE.sRGBEncoding; // optional with post-processing
 
 	Assigning colors in a wide-gamut color space will clamp the color to the smaller gamut of the
 	Linear-sRGB working color space, and so is not useful or recommended at this time.
+	<!---
+		Massive subject here.
+
+		What is worse is that wider gamuts will clip / clamp, which will yield device dependent
+		output that varies device to device, medium to medium. This will undermine any attempt
+		at pixel management.
+	--->
 
 	<h2>Common Mistakes</h2>
 
